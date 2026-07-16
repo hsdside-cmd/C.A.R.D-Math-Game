@@ -16,7 +16,10 @@
     --leaf:#5fd06a;
     --sky:#7fd6ff;
   }
-  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;
+    -webkit-touch-callout:none;   /* iOS 길게 누르기 메뉴 차단 */
+    -webkit-user-drag:none; user-drag:none;}
+  img,canvas{-webkit-user-drag:none;user-drag:none;pointer-events:auto;}
   html,body{margin:0;padding:0;height:100%;background:var(--ink);overflow:hidden;
     font-family:"Galmuri11","DungGeunMo","NeoDunggeunmo",-apple-system,"Malgun Gothic","Apple SD Gothic Neo",sans-serif;
     color:var(--parch);user-select:none;-webkit-user-select:none;touch-action:none;}
@@ -33,7 +36,7 @@
   /* ---------- touch controls ---------- */
   #pad,#act,#menuBtn{display:none}
   body.playing #pad{display:block} body.playing #act,body.playing #menuBtn{display:flex}
-  #pad{position:fixed;z-index:20;touch-action:none;}
+  #pad{position:fixed;z-index:20;touch-action:none;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;}
   body.landscape #pad{left:14px;bottom:14px;width:168px;height:168px;}
   body.portrait  #pad{left:5vw;   top:var(--padY);width:150px;height:150px;}
   #pad .k{position:absolute;width:56px;height:56px;background:linear-gradient(#3a3350,#221d31);
@@ -1140,6 +1143,14 @@ function canMove(nx,ny){
 
 /* ---------------- input ---------------- */
 const keys={};
+/* 태블릿에서 버튼을 꾹 눌렀을 때 뜨는 브라우저 메뉴(인쇄·복사·이미지 저장 등) 차단 */
+document.addEventListener('contextmenu', e=>{ e.preventDefault(); }, {passive:false});
+/* 컨트롤/캔버스에서 드래그로 텍스트·이미지 선택되는 것도 차단 */
+document.addEventListener('selectstart', e=>{
+  const t=e.target;
+  if(t && t.closest && (t.closest('#pad')||t.closest('#act')||t.id==='game'||t.tagName==='CANVAS')) e.preventDefault();
+});
+document.addEventListener('dragstart', e=>{ e.preventDefault(); });
 /* ---- 터치(탭)로 이동: 탭한 지점으로 걸어간다 (D패드/키와 병행) ---- */
 let tapTarget=null;
 function canvasToWorld(clientX, clientY){
