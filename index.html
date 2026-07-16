@@ -250,7 +250,7 @@
     <h1>전체 지도</h1>
     <canvas id="bigmap" width="360" height="200"></canvas>
     <div class="leg">
-      <span><i style="background:#fff;border:2px solid #000"></i>현재 위치</span>
+      <span><i style="background:#ffe27a;border:2px solid #000;border-radius:50%"></i>내 위치(얼굴)</span>
       <span><i style="background:#e0384f"></i>보스 (미격파)</span>
       <span><i style="background:#4a4361"></i>보스 (격파)</span>
       <span><i style="background:#f2c14e"></i>마왕 · 상점</span>
@@ -1521,17 +1521,35 @@ function drawMapTo(g,cs,big){
       g.fillText(BOSSLABEL[d.boss],mx,my+cs*0.30);
     }
   }
-  // 현재 위치 (깜빡임)
+  // 현재 위치 — 내 캐릭터 얼굴 아이콘
   const q=S.screen.split(','), pc=+q[0], pr=+q[1];
   const x=pc*cs, y=pr*cs;
-  g.strokeStyle='#fff'; g.lineWidth=Math.max(2,cs/8);
-  g.strokeRect(x+2,y+2,cs-4,cs-4);
-  g.strokeStyle='#000'; g.lineWidth=Math.max(1,cs/16);
-  g.strokeRect(x+1,y+1,cs-2,cs-2);
-  if(Math.floor(TICK/18)%2===0){
-    g.fillStyle='#fff'; g.beginPath(); g.arc(x+cs/2,y+cs/2,cs*0.16,0,7); g.fill();
-    g.fillStyle='#000'; g.beginPath(); g.arc(x+cs/2,y+cs/2,cs*0.08,0,7); g.fill();
+  // 은은한 강조 배경 + 테두리 (살짝 맥동)
+  const pulse=(Math.sin(TICK/12)*0.5+0.5);
+  g.fillStyle='rgba(255,236,120,'+(0.25+pulse*0.25).toFixed(2)+')';
+  g.fillRect(x+1,y+1,cs-2,cs-2);
+  const im=IMG[S.char] && IMG[S.char].w;
+  if(im && im.complete){
+    // 스프라이트에서 머리~얼굴 부분만 잘라 칸에 채운다 (얼굴이 잘 보이게)
+    const sw=im.width;
+    const cropTop=Math.round(im.height*0.06);           // 머리 위 살짝 아래부터
+    const cropBot=Math.round(im.height*0.50);           // 턱 부근까지
+    const cropH=cropBot-cropTop;
+    const pad=Math.max(1,cs*0.09);
+    const dw=cs-pad*2;
+    const scale=Math.min(dw/sw, dw/cropH) * 1.15;       // 살짝 확대해 얼굴을 크게
+    const w2=sw*scale, h2=cropH*scale;
+    g.save();
+    g.beginPath(); g.arc(x+cs/2, y+cs/2, (cs/2-pad*0.5), 0, 7); g.clip();
+    g.fillStyle='#e8eef8'; g.fillRect(x+1,y+1,cs-2,cs-2);
+    g.drawImage(im, 0,cropTop, sw,cropH, x+cs/2-w2/2, y+cs/2-h2/2, w2,h2);
+    g.restore();
   }
+  // 테두리 (흰+검, 살짝 맥동)
+  g.strokeStyle='#fff'; g.lineWidth=Math.max(2,cs/7)*(0.85+pulse*0.3);
+  g.beginPath(); g.arc(x+cs/2, y+cs/2, (cs/2-Math.max(1,cs*0.06)), 0, 7); g.stroke();
+  g.strokeStyle='#1b1726'; g.lineWidth=Math.max(1,cs/16);
+  g.beginPath(); g.arc(x+cs/2, y+cs/2, (cs/2-Math.max(1,cs*0.06)), 0, 7); g.stroke();
   g.textAlign='left'; g.textBaseline='alphabetic';
 }
 const mini=document.getElementById('mini'), mcx=mini.getContext('2d');
