@@ -1277,8 +1277,8 @@ function buildScreen(key,entry){
       const idx=Math.floor(R()*pool.length);
       const sp=pool.splice(idx,1)[0];
       const tx=sp.tx, ty=sp.ty;
-      const pool=REGION_MOBS[def.rg]||MOBKIND;
-      const kind=pool[Math.floor(R()*pool.length)];
+      const mobPool=REGION_MOBS[def.rg]||MOBKIND;
+      const kind=mobPool[Math.floor(R()*mobPool.length)];
       mobs.push({i,x:tx*TS+8,y:PY+ty*TS+8,kind,rg:def.rg,
         tier: def.rg==='castle'?2:1, hits:2,
         name: mobName(def.rg,kind),
