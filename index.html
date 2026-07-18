@@ -27,7 +27,7 @@
   #stage{position:relative;flex:0 0 auto;margin-top:6px;}
   /* 세로 모드: 게임 화면을 위로 올리고, 그 아래 남는 공간에 컨트롤을 둔다 */
   body.portrait #app{justify-content:flex-start;}
-  body.portrait #stage{margin-top:4px;}
+  body.portrait #stage{margin-top:var(--stageTop, 4px);}
   /* 가로 모드: 게임 화면을 세로 중앙에 */
   body.landscape #app{justify-content:center;}
   canvas{display:block;image-rendering:pixelated;image-rendering:crisp-edges;
@@ -56,8 +56,8 @@
   body.portrait  #act{right:6vw;  top:calc(var(--padY) + 24px);width:104px;height:104px;}
   #act:active{transform:translateY(3px)}
   #mini{position:fixed;z-index:19;image-rendering:pixelated;border:3px solid var(--gold2);
-    background:#0b0910;height:auto;box-shadow:0 0 0 3px #000;}
-  body.portrait  #mini{top:var(--ctrlY);left:50%;transform:translateX(-50%);width:min(46vw,190px);}
+    background:#0b0910;height:auto;box-shadow:0 0 0 3px #000;box-sizing:border-box;}
+  body.portrait  #mini{top:var(--ctrlY);left:var(--gameL);transform:none;width:var(--miniW);}
   /* 가로 모드: 화면 오른쪽 위 모서리에 작게 */
   body.landscape #mini{top:50px;right:12px;width:clamp(90px,14vw,150px);cursor:pointer;}
   #miniCap{position:fixed;z-index:19;font-size:11px;color:#8f86a8;white-space:nowrap;display:none !important;}
@@ -253,6 +253,11 @@
   #toast{position:fixed;left:50%;top:14%;transform:translateX(-50%);z-index:70;background:#120f1c;
     border:3px solid var(--gold2);padding:12px 16px;font-size:15px;max-width:90vw;text-align:center;display:none}
   #toast.show{display:block}
+  /* 게임 중 세로모드: 안내 메시지를 게임화면 우하단(지도 오른쪽)에 딱 붙임 */
+  body.portrait.playing #toast{left:auto;right:var(--gameR);top:auto;bottom:var(--toastB);transform:none;
+    width:var(--toastW);max-width:none;min-height:var(--miniH);padding:8px 10px;font-size:13px;line-height:1.35;
+    display:flex;align-items:center;justify-content:center;box-sizing:border-box;white-space:pre-line;}
+  body.portrait.playing #toast:not(.show){display:none}
   @media (max-width:520px){ .slot,.card{width:38px;height:50px;font-size:22px} }
 </style>
 </head>
@@ -2727,6 +2732,7 @@ function returnToTitle(){
   for(const k in keys) keys[k]=0;
   closeAllVeils();
   document.body.classList.remove('playing');
+  fit();
   const hasSave = !!loadSave();
   document.getElementById('btnCont').disabled = !hasSave;
   buildDiffs(); buildPicks(); refreshBest();
@@ -2825,6 +2831,7 @@ document.getElementById('btnNew').onclick=()=>{
   S.px=128;S.py=PY+88;
   document.getElementById('title').classList.remove('show');
   document.body.classList.add('playing');
+  fit();
   audioInit(); setBGM(scr.def.rg);
   save(); toast('출발! 화살표 방향으로만 이동할 수 있다.',2400);
 };
@@ -2844,6 +2851,7 @@ document.getElementById('btnCont').onclick=()=>{
   ended=false; lastT=0; scr=buildScreen(S.screen);
   document.getElementById('title').classList.remove('show');
   document.body.classList.add('playing');
+  fit();
   audioInit(); setBGM(scr.def.rg);
 };
 
@@ -2854,25 +2862,49 @@ function fit(){
   document.body.classList.toggle('landscape', !portrait);
   let sc;
   if(portrait){
-    // 세로: 폭을 꽉 채워 게임 화면을 위쪽에 크게. 아래 남는 공간에 컨트롤.
+    // 상단 버튼(음향·지도·메뉴) 아래로 게임화면을 내린다 (버튼과 지역명 겹침 방지)
+    let topOff = 4;
+    if(document.body.classList.contains('playing')){
+      let btm = 0;
+      ['menuBtn','mapBtn','sndBtn'].forEach(id=>{
+        const b=document.getElementById(id);
+        if(b && b.offsetParent!==null){ const br=b.getBoundingClientRect(); if(br.bottom>btm) btm=br.bottom; }
+      });
+      if(btm>0) topOff = Math.round(btm) + 6; else topOff = 58;
+    }
+    document.documentElement.style.setProperty('--stageTop', topOff+'px');
+    // 세로: 폭을 꽉 채워 게임 화면을 버튼 아래에 크게. 남는 공간에 컨트롤.
     const availW = innerWidth - 12;
-    const availH = innerHeight * 0.62;      // 화면의 62%까지만 게임에 사용
+    const availH = (innerHeight - topOff) * 0.62;   // 버튼 아래 남은 높이의 62%까지
     // 폭 기준으로 채우되, 세로 상한을 넘으면 세로에 맞춘다 (픽셀은 CSS로 확대 → 선명 유지)
     let cw = availW, chh = cw * H / W;
     if(chh > availH){ chh = availH; cw = chh * W / H; }
     cv.style.width = cw+'px'; cv.style.height = chh+'px';
-    const gameBottom = 4 + chh + 8;
-    // 미니맵 줄 높이(약 미니맵 폭*5/9 + 여유). 대략 계산.
-    const miniW = Math.min(innerWidth*0.46, 190);
-    const miniH = miniW * (GH||5) / (GW||9) + 8;
-    const gap = innerHeight - gameBottom;              // 게임 아래 남은 전체 공간
-    const padH = 150;                                   // D패드 높이
-    const stack = miniH + 12 + padH;                    // 미니맵+간격+패드
-    let top = gameBottom + Math.max(6, (gap - stack)/2);
-    top = Math.min(top, innerHeight - stack - 6);
-    const miniY = top;
-    const padY  = top + miniH + 12;
-    document.documentElement.style.setProperty('--ctrlY', miniY+'px');   // 미니맵 줄
+    // 게임 화면의 실제 좌/우 가장자리와 아래 끝을 구한다 (지도·안내문을 딱 붙이기 위함)
+    const r = cv.getBoundingClientRect();
+    const gameL = Math.round(r.left);                     // 게임화면 왼쪽 x
+    const gameR = Math.round(innerWidth - r.right);       // 오른쪽 여백
+    const gameBottom = Math.round(r.bottom);              // 게임화면 아래 y
+    // 지도(좌) + 안내문(우)을 게임화면 폭 안에서 나눠 배치
+    const rowW  = Math.round(r.width);
+    const miniW = Math.round(rowW * 0.42);                // 지도: 게임폭의 42%
+    const gapX  = 6;
+    const toastW= rowW - miniW - gapX;                    // 안내문: 나머지
+    const miniH = Math.round((miniW-6) * (GH||5) / (GW||9)) + 6;
+    document.documentElement.style.setProperty('--gameL',  gameL+'px');
+    document.documentElement.style.setProperty('--gameR',  gameR+'px');
+    document.documentElement.style.setProperty('--miniW',  miniW+'px');
+    document.documentElement.style.setProperty('--toastW', toastW+'px');
+    document.documentElement.style.setProperty('--miniH',  miniH+'px');
+    // 지도/안내문 줄은 게임화면 바로 아래에 붙이고, D패드는 그 아래로
+    const miniY = gameBottom + 4;
+    let padY = miniY + miniH + 10;
+    const padH = 150;
+    padY = Math.min(padY, innerHeight - padH - 6);
+    padY = Math.max(padY, miniY + miniH + 6);
+    // 안내문 아래끝 = 지도 아래끝 (길어지면 위로 늘어난다)
+    document.documentElement.style.setProperty('--toastB', Math.round(innerHeight - (miniY + miniH))+'px');
+    document.documentElement.style.setProperty('--ctrlY', miniY+'px');   // 지도·안내문 줄
     document.documentElement.style.setProperty('--padY',  padY+'px');    // 컨트롤 줄
   } else {
     // 가로: 세로 중앙. 하단 컨트롤 공간(약 40px 여백)만 빼고 최대 크기.
