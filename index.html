@@ -26,9 +26,9 @@
   #app{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;}
   #stage{position:relative;flex:0 0 auto;margin-top:6px;}
   /* 튜토리얼 설명창 — 게임 화면 중앙 하단 */
-  #tutBox{position:absolute;left:50%;bottom:14%;transform:translateX(-50%);z-index:40;
-    width:82%;max-width:none;background:rgba(12,10,22,.96);border:3px solid var(--gold);border-radius:8px;
-    padding:12px 14px;display:none;box-shadow:0 6px 24px rgba(0,0,0,.6)}
+  #tutBox{position:fixed;left:50%;bottom:16%;transform:translateX(-50%);z-index:75;
+    width:min(86%,520px);max-width:none;background:rgba(12,10,22,.97);border:3px solid var(--gold);border-radius:8px;
+    padding:12px 14px;display:none;box-shadow:0 6px 28px rgba(0,0,0,.7)}
   #tutBox.show{display:block;animation:tutPop .25s ease-out}
   @keyframes tutPop{from{transform:translateX(-50%) scale(.9);opacity:0}to{transform:translateX(-50%) scale(1);opacity:1}}
   #tutText{color:var(--parch);font-size:clamp(14px,3.4vw,19px);line-height:1.5;font-weight:600;
@@ -36,8 +36,8 @@
   #tutNext{margin:10px auto 0;display:block;background:var(--gold);color:#1b1726;border:none;border-radius:6px;
     padding:8px 20px;font-size:16px;font-weight:800;font-family:inherit;cursor:pointer}
   #tutNext:active{background:#fff}
-  /* 손가락 포인터 */
-  #tutFinger{position:fixed;left:0;top:0;z-index:60;font-size:38px;pointer-events:none;display:none;
+  /* 손가락 포인터 (전투 UI 위) */
+  #tutFinger{position:fixed;left:0;top:0;z-index:77;font-size:38px;pointer-events:none;display:none;
     filter:drop-shadow(0 2px 3px rgba(0,0,0,.7));transition:left .5s ease-in-out,top .5s ease-in-out;
     transform:translate(-6px,-4px)}
   #tutFinger.show{display:block}
@@ -150,6 +150,17 @@
   .slot-row .sbtn:active{background:var(--gold);color:#1b1726}
   /* 카운트다운 */
   #countVeil{display:none;align-items:center;justify-content:center}
+  /* 튜토리얼 여부 묻는 창 */
+  #tutAskVeil{display:none;align-items:center;justify-content:center}
+  #tutAskVeil.show{display:flex}
+  #tutAskBox{background:linear-gradient(#241f33,#171322);border:3px solid var(--gold);border-radius:10px;
+    padding:28px 26px;max-width:min(440px,90vw);text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.7);
+    animation:tutPop .3s ease-out}
+  #tutAskText{color:var(--parch);font-size:clamp(18px,4.6vw,24px);font-weight:700;line-height:1.5;margin-bottom:22px}
+  #tutAskBtns{display:flex;gap:12px}
+  #tutAskBtns .btn{margin:0;flex:1;font-size:18px;padding:14px}
+  #tutAskYes{background:var(--gold);color:#1b1726;font-weight:800}
+  #tutAskYes:active{background:#fff}
   #countVeil.show{display:flex}
   #countNum{font-size:26vh;font-weight:900;color:var(--gold);text-shadow:0 0 40px rgba(214,178,90,.6);
     animation:cpop .9s ease-out}
@@ -337,12 +348,12 @@
 <body>
 <div id="app">
   <div id="stage"><canvas id="game" width="256" height="224"></canvas>
-    <div id="tutBox">
-      <div id="tutText"></div>
-      <button id="tutNext">다음 ▶</button>
-    </div>
     <div id="tutFocus"></div>
   </div>
+</div>
+<div id="tutBox">
+  <div id="tutText"></div>
+  <button id="tutNext">다음 ▶</button>
 </div>
 <div id="tutFinger">👆</div>
 
@@ -412,6 +423,15 @@
 </div>
 
 <!-- 카운트다운 -->
+<div class="veil" id="tutAskVeil" style="background:#000;z-index:82">
+  <div id="tutAskBox">
+    <div id="tutAskText">게임 플레이 방법을<br>알아보시겠습니까?</div>
+    <div id="tutAskBtns">
+      <button class="btn" id="tutAskYes">예</button>
+      <button class="btn" id="tutAskNo">아니오</button>
+    </div>
+  </div>
+</div>
 <div class="veil" id="countVeil" style="background:#000;z-index:80">
   <div id="countNum">3</div>
 </div>
@@ -1907,7 +1927,9 @@ function drawMapTo(g,cs,big){
     }
   }
   // 현재 위치 — 내 캐릭터 얼굴 아이콘
-  const q=S.screen.split(','), pc=+q[0], pr=+q[1];
+  // 튜토리얼 방(__tut__)처럼 좌표(x,y) 형식이 아닌 방이면 시작 지점에 표시
+  const faceKey = (S.screen && S.screen.indexOf(',')>=0) ? S.screen : MAPSTART;
+  const q=faceKey.split(','), pc=+q[0], pr=+q[1];
   const x=pc*cs, y=pr*cs;
   // 은은한 강조 배경 + 테두리 (살짝 맥동)
   const pulse=(Math.sin(TICK/12)*0.5+0.5);
@@ -2335,10 +2357,7 @@ function buildTray(){
   ops.forEach(v=>tray.appendChild(mkCard(v,'o')));
   for(let i=0;i<=9;i++) tray.appendChild(mkCard(String(i),'n'));
   const cap=(DIFF[S.diff]||DIFF.normal).maxSlots;
-  document.getElementById('trayLbl').innerHTML=
-    '카드를 끌어다 빈칸에 놓아라. (카드를 누른 다음 빈칸을 눌러도 된다)<br>'+
-    '숫자 카드(0~9)와 '+opNames()+'는 몇 번을 써도 없어지지 않는다.<br>'+
-    '빈칸은 최대 '+cap+'개 · 시간 제한 — 일반 몬스터 15초, 보스 10초. 시간이 지나면 하트 1개를 잃는다.';
+  document.getElementById('trayLbl').innerHTML='카드를 빈칸으로 끌어서 옮겨봐.';
 }
 function mkCard(v,kind){
   const d=document.createElement('div');
@@ -2350,7 +2369,7 @@ let qTimer=null, qLeft=0, qMax=15;
 function startQTimer(){
   stopQTimer();
   const bar=document.getElementById('qtimer');
-  const noTimer = !!(DIFF[S.diff] && DIFF[S.diff].mc);   // 왕초보는 시간제한 없음
+  const noTimer = !!(DIFF[S.diff] && DIFF[S.diff].mc) || (typeof battle!=='undefined' && battle.tutorial);   // 왕초보·튜토리얼은 시간제한 없음
   if(!battle.on || noTimer){ bar.classList.remove('show'); stopQTimer(); return; }
   qMax = battle.isBoss ? QLIMIT_BOSS : QLIMIT_MOB;
   bar.classList.add('show'); qLeft=qMax; renderQTimer();
@@ -2534,7 +2553,7 @@ function updateFacePreview(){
   }
 }
 function checkAnswer(){
-  if(battle.tutorial && !TUT_ALLOW_CHECK) return;   // 튜토리얼 시연 중 플레이어 확인 잠금
+  if(battle.tutorial && !TUT_ALLOW_CHECK){ toast('지금은 시범을 보고 있어요. 아래 [다음] 버튼을 눌러 진행하세요!',1800); return; }   // 튜토리얼 시연 중 플레이어 확인 잠금
   if(!battle.on || battle.lock) return;   // 채점 중에는 확인 연타 무시
   if(battle.q && battle.q.mc) return;     // 3지선다는 보기 버튼으로만 판정
   const st=currentEq();
@@ -3222,14 +3241,43 @@ function startNewInSlot(n){
   document.getElementById('slotVeil').classList.remove('show');
   document.getElementById('title').classList.remove('show');
   save();
-  // 새 게임은 3-2-1 카운트다운 후 튜토리얼부터
+  // 먼저 튜토리얼 여부를 묻는다
+  askTutorial();
+}
+
+// 튜토리얼 진행 여부 묻기
+function askTutorial(){
+  const fc=document.getElementById('fadeCover'); fc.classList.add('on');   // 검은 화면
+  document.getElementById('tutAskVeil').classList.add('show');
+}
+document.getElementById('tutAskYes').onclick=()=>{
+  document.getElementById('tutAskVeil').classList.remove('show');
+  startTutorial();     // 튜토리얼 실행 (끝나면 내부에서 카운트다운 후 시작맵)
+};
+document.getElementById('tutAskNo').onclick=()=>{
+  document.getElementById('tutAskVeil').classList.remove('show');
+  // 튜토리얼 건너뛰기 → 3,2,1 카운트다운 후 바로 시작맵
+  S.tutDone=true; save();
+  countdownThen(()=>{
+    document.getElementById('title').classList.remove('show');
+    document.body.classList.add('playing');
+    fit();
+    audioInit(); setBGM(scr.def.rg);
+    const fc=document.getElementById('fadeCover');
+    requestAnimationFrame(()=>requestAnimationFrame(()=>fc.classList.remove('on')));
+    toast('모험을 시작합니다! 화살표 방향으로 이동하세요.',2600);
+  });
+};
+
+// 공통 카운트다운 헬퍼 (3,2,1 → 콜백)
+function countdownThen(cb){
   const cv=document.getElementById('countVeil'), cn=document.getElementById('countNum');
   const fc=document.getElementById('fadeCover'); fc.classList.add('on');
   cv.classList.add('show');
   let c=3;
   const tick=()=>{
     cn.textContent=c; cn.style.animation='none'; void cn.offsetWidth; cn.style.animation='';
-    if(c<=0){ cv.classList.remove('show'); startTutorial(); return; }
+    if(c<=0){ cv.classList.remove('show'); cb(); return; }
     c--; setTimeout(tick,900);
   };
   tick();
@@ -3340,7 +3388,7 @@ function loop(t){
   const onTitle=document.getElementById('title').classList.contains('show');
   if(S && scr && !onTitle){
     const dt = lastT ? Math.min(0.1,(t-lastT)/1000) : 0;
-    if(!paused && !ended) S.time += dt;   // 전투 중에도 시계는 흐른다
+    if(!paused && !ended && !tutActive()) S.time += dt;   // 전투 중에도 시계는 흐른다 (튜토리얼 제외)
     update();
     cx.fillStyle='#000'; cx.fillRect(0,0,W,H);
     drawTiles(); drawArrows(); drawTapMarker(); drawEntities(); drawPlayer(); drawHUD(); drawBottom();
@@ -3708,11 +3756,12 @@ function tutStepFocus(){
 /* ===== 단계 e: 실제 시작 맵으로 ===== */
 function endTutorialToStart(){
   TUT.active=false;
-  // 페이드아웃 → 시작맵 → 페이드인
-  const fc=document.getElementById('fadeCover');
-  fc.classList.add('on');
-  setTimeout(()=>{
-    // 본편 시작 맵 진입
+  // 튜토리얼 관련 UI 정리
+  tutFingerHide(); tutHideBox(); tutFocus().classList.remove('show');
+  if(battle.on){ battle.on=false; document.getElementById('battle').classList.remove('show'); }
+  paused=true;
+  // 3,2,1 카운트다운 후 시작맵 진입
+  countdownThen(()=>{
     delete MAP['__tut__'];
     S.tutDone=true;
     S.screen=MAPSTART;
@@ -3723,11 +3772,12 @@ function endTutorialToStart(){
     scr.startNoMob=true;
     setBGM(scr.def.rg);
     save();
+    const fc=document.getElementById('fadeCover');
     requestAnimationFrame(()=>requestAnimationFrame(()=>fc.classList.remove('on')));
     paused=false;
     TUT=null;
     toast('모험을 시작합니다! 화살표 방향으로 이동하세요.',2600);
-  }, 850);
+  });
 }
 
 // 다음 버튼 / 설명창 클릭 → onNext 실행
