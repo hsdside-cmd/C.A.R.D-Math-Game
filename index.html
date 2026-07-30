@@ -8695,7 +8695,7 @@ function insNear(def){
    교실에 배포하기 전에 아래 값을 반드시 false 로 되돌리세요.
    (주소 뒤에 #lockstory 를 붙이면 이 값과 상관없이 잠깁니다)
    ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ */
-const DEV_UNLOCK_ALL = true;
+const DEV_UNLOCK_ALL = false;
 function devUnlockOn(){
   if(!DEV_UNLOCK_ALL) return false;
   try{ if(location.hash && location.hash.indexOf('lockstory')>=0) return false; }catch(e){}
