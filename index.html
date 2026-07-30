@@ -296,6 +296,12 @@
   .hpbar{height:clamp(18px,3.5vw,30px);background:#2b1414;border:3px solid #000;position:relative;border-radius:3px}
   .hpfill{height:100%;background:linear-gradient(#e05a4a,#a02418);width:100%;transition:width .35s}
   .hearts{font-size:clamp(22px,6vw,38px);letter-spacing:clamp(2px,1vw,4px);margin-top:clamp(4px,1.4vw,10px);line-height:1}
+  /* 내 체력 줄 — 문제 아래, 카드 위 (내 쪽에 둔다) */
+  .mybar{display:flex;align-items:center;justify-content:center;gap:10px;
+    margin:0 auto clamp(4px,1.2vw,10px);padding:4px 12px;width:fit-content;
+    background:rgba(20,16,36,.55);border:2px solid #4a4361;border-radius:8px}
+  .mybar .mylbl{color:#9aa4b8;font-size:clamp(11px,2.6vw,14px);white-space:nowrap}
+  .mybar .hearts{margin-top:0}
   .heart{color:#e0384f}.heart.off{color:#41364a}
 
   .eqbox{background:#0f0d17;border:3px solid var(--gold2);padding:10px 6px;text-align:center;}
@@ -424,6 +430,8 @@
     width:var(--toastW);max-width:none;min-height:var(--miniH);padding:10px 12px;font-size:18px;line-height:1.4;font-weight:600;
     display:flex;align-items:center;justify-content:center;box-sizing:border-box;white-space:pre-line;}
   body.portrait.playing #toast:not(.show){display:none}
+  /* PC·가로모드: 상단 대사창(#dlgT)과 자리가 겹치지 않게 안내문을 아래로 내린다 */
+  body.landscape #toast{top:auto;bottom:9%}
   @media (max-width:520px){ .slot,.card{width:38px;height:50px;font-size:22px} }
   @media (max-width:520px){ body.portrait .tray .card{width:100%;height:auto} }
 
@@ -572,6 +580,10 @@
   <div class="panel panel-wide" id="titleChap" style="display:none">
     <h1 style="font-size:24px">저택의 서재</h1>
     <h2 style="margin-bottom:10px">읽을 책을 골라라</h2>
+    <div id="devWarn" style="display:none;margin:0 0 8px;padding:6px 8px;border:2px solid #c0392b;
+      border-radius:6px;background:#2a1418;color:#ff9a8a;font-size:12px;line-height:1.5">
+      ⚠ <b>테스트 모드</b> — 모든 책이 열려 있습니다.<br>배포 전에 <b>DEV_UNLOCK_ALL</b>을 false로 되돌리세요.
+    </div>
     <div class="shelf" id="shelf"></div>
     <div class="chapInfo" id="chapInfo">책을 선택하세요.</div>
     <button class="btn" id="btnChapStart" style="display:none">읽기 시작 ▶</button>
@@ -646,7 +658,6 @@
           <div class="foename" id="foeName">몬스터</div>
           <div class="hpbar"><div class="hpfill" id="foeHp"></div></div>
           <div class="lbl" id="foeSub" style="text-align:left">정답 2번이면 쓰러진다</div>
-          <div class="hearts" id="bHearts"></div>
         </div>
       </div>
     </div>
@@ -656,6 +667,10 @@
       <div class="msg" id="bMsg">카드를 눌러 빈칸을 채워라</div>
     </div>
     <div>
+      <div class="mybar">
+        <span class="mylbl">내 하트</span>
+        <div class="hearts" id="bHearts"></div>
+      </div>
       <div id="cardMode">
         <div class="tray" id="tray"></div>
         <div class="lbl" id="trayLbl"></div>
@@ -1530,10 +1545,10 @@ const BOSS={
   byeol2:{name:'벼슬아치', img:'byeol_g', hits:3, tier:3, gold:150},
   byeol3:{name:'벼슬아치', img:'byeol_m', hits:3, tier:3, gold:150},
   king:{name:'조선의 왕', img:'king', hits:5, tier:4, gold:999},
-  gv1:{name:'저택의 수호령', img:'boss1', hits:3, tier:3, gold:150},
-  gv2:{name:'저택의 수호령', img:'boss2', hits:3, tier:3, gold:150},
-  gv3:{name:'저택의 수호령', img:'boss3', hits:3, tier:3, gold:150},
-  gv4:{name:'저택의 수호령', img:'boss4', hits:3, tier:3, gold:150},
+  gv1:{name:'저택의 수호령', img:'gv_1', hits:3, tier:3, gold:150},
+  gv2:{name:'저택의 수호령', img:'gv_2', hits:3, tier:3, gold:150},
+  gv3:{name:'저택의 수호령', img:'gv_3', hits:3, tier:3, gold:150},
+  gv4:{name:'저택의 수호령', img:'gv_4', hits:3, tier:3, gold:150},
   dracula:{name:'드라큘라', img:'dracula', hits:5, tier:4, gold:999},
   dogking:{name:'강아지 대왕', img:'dogking', hits:5, tier:4, gold:999},
   scientist:{name:'이상한 과학자', img:'scientist', hits:5, tier:4, gold:999},
@@ -1547,10 +1562,10 @@ const BOSS={
   ob3:{name:'로봇이었던 것', img:'ob_c', hits:3, tier:3, gold:150},
   ob4:{name:'소녀였던 것',   img:'ob_d', hits:3, tier:3, gold:150},
   origin:{name:'근원',       img:'origin', hits:5, tier:4, gold:999},
-  vb1:{name:'고양이 대장', img:'boss1', hits:3, tier:3, gold:150},
-  vb2:{name:'토끼 대장', img:'boss2', hits:3, tier:3, gold:150},
-  vb3:{name:'거북이 대장', img:'boss3', hits:3, tier:3, gold:150},
-  vb4:{name:'햄스터 대장', img:'boss4', hits:3, tier:3, gold:150},
+  vb1:{name:'고양이 대장', img:'vcat_b', hits:3, tier:3, gold:150},
+  vb2:{name:'토끼 대장', img:'vrab_b', hits:3, tier:3, gold:150},
+  vb3:{name:'거북이 대장', img:'vtur_b', hits:3, tier:3, gold:150},
+  vb4:{name:'햄스터 대장', img:'vham_b', hits:3, tier:3, gold:150},
   lb1:{name:'경비 로봇', img:'lbot_a', hits:3, tier:3, gold:150},
   lb2:{name:'경비 로봇', img:'lbot_b', hits:3, tier:3, gold:150},
   lb3:{name:'경비 로봇', img:'lbot_c', hits:3, tier:3, gold:150},
@@ -2102,6 +2117,14 @@ const BOSSART={
   "boss3":[".....AAAAAAA..........","....ABBBBBBBA.........","...ABBBBBBBBBA........","...ABBDDDDDBBA........","...ABDDRDDDDBA...AF...","...ABDDDEEDDBA..AFA...","...ABDDDDDDDBA..AFA...","....ABDDDDDBA..AFA....","....AABBBBBAA.AFA.....","...ABBBCCCBBBAAFA.....","..ABBBCCCCCBBBFA......","..ABBCCCCCCCBBA.......","..ABBCCCCCCCBBA.......","..ABBCCCCCCCBBA.......","..ABBBCCCCCBBBA.......","...ABBBCCCBBBA........","...ABBA...ABBA........","...ABA.....ABA........","..AABA.....ABAA.......","..AAA.......AAA.......","......................","......................","......................","......................"],
   "boss4":[".......AAAAAA.........","......AFFFFFFA........","......AAAAAAAA........",".....ACCCCCCCCA.......",".....ACCCCCCCCA.......",".....ACCEECEECA.......",".....ACCCCCCCCA.......","......ACCCCCCA........",".....AACCCCCCAA.......","....ACCAFFFFACCA......","....ACCAFFFFACCA......","...ACCCAFFFFACCCA.....","...ACCCAFFFFACCCA.....","...ACCCAFFFFACCCA.....","....ACCAFFFFACCA......","....AACCCCCCCCAA......",".....ACCCCCCCCA.......","......ACCCCCCA...AA...",".......ACCCCA...ACCA..","......ACCCCCCA.ACCA...",".....ACCCCCCCCAACA....","....AACCCCCCCCCCAA....",".....AAAAAAAAAAAA.....","......................"],
   "boss_last":["...A..............A....","..AWA............AWA...","..AWWA..AAAAAA..AWWA...",".AWWWA.ACCCCCCA.AWWWA..","AWWAAACCCCCCCCCAAAWWA..","AWA.ACCCCCCCCCCCCA.AWA.","....ACCEECCCCEECCA.....","....ACCCCCCCCCCCCA.....","....ACCCCCWWCCCCCA.....",".AWWAABBBBBBBBBBAAWWA..","AWWWABFFFFFFFFFFBAWWWA.","AWWABFFFFFFFFFFFFBAWWA.",".AAABFFFFFFFFFFFFBAAA..","...ABFFFFFFFFFFFFBA....","...ABFFFFFFFFFFFFBA....","...AABFFFFFFFFFFBAA....","....ABFFFFFFFFFFBA.....","....ABBA......ABBA.....","....ABA........ABA.....","...AABA........ABAA....","...AAA..........AAA....","......................","......................","......................"],
+  "gv_1":["..........W...........", ".........WFW..........", "..........A...........", "....AHHHHHHHHHHA......", "...AHHHHHHHHHHHHA.....", "...AHHDDDDDDDDHHA.....", "...AHDDNNDDNNDDHA.....", "...AHDDNNDDNNDDHA.....", "...AHDDDDEEDDDDHA.....", "...AHHDDDDDDDDHHA.....", "..ACCCCCCCCCCCCCCA....", "..ACCCCCCCCCCCCCCA....", "..ACCCCCCCCCCCCCCA....", "..ACCCCCCCCCCCCCCA....", "...ACCCCCCCCCCCCA.....", "...ACCCACCCCACCCA.....", "....ACA.ACCA.ACA......", "....AA...AA...AA......", "......................", "......................", "......................", "......................"],
+  "gv_2":[".....AAAAAAAAAA.......", ".....AWWWWWWWWA.......", "......AWWWWWWA........", "....AHHHHHHHHHHA......", "...AHHHHHHHHHHHHA.....", "...AHHDDDDDDDDHHA.....", "...AHDDNNDDNNDDHA.....", "...AHDDNNDDNNDDHA.....", "...AHDDDDEEDDDDHA.....", "...AHHDDDDDDDDHHA.....", "..ACCCCCCCCCCCCCCA....", "..ACCCCCCCCCCCCCCA....", "..ACCCCCCCCCCCCCCA....", "..ACCCCCCCCCCCCCCA....", "...ACCCCCCCCCCCCA.....", "...ACCCACCCCACCCA.....", "....ACA.ACCA.ACA......", "....AA...AA...AA......", "......................", "......................", "......................", "......................"],
+  "gv_3":["......FFFFFFFF........", "......FWWFFWWF........", ".......AAAAAA.........", "....AHHHHHHHHHHA......", "...AHHHHHHHHHHHHA.....", "...AHHDDDDDDDDHHA.....", "...AHDDNNDDNNDDHA.....", "...AHDDNNDDNNDDHA.....", "...AHDDDDEEDDDDHA.....", "...AHHDDDDDDDDHHA.....", "..ACCCCCCCCCCCCCCA....", "..ACCCCCCCCCCCCCCA....", "..ACCCCCCCCCCCCCCA....", "..ACCCCCCCCCCCCCCA....", "...ACCCCCCCCCCCCA.....", "...ACCCACCCCACCCA.....", "....ACA.ACCA.ACA......", "....AA...AA...AA......", "......................", "......................", "......................", "......................"],
+  "gv_4":["......................", "........AAAA..........", ".......AWWWWA.........", "....AHHHHHHHHHHA......", "...AHHHHHHHHHHHHA.....", "...AHHWWWWWWWWHHA.....", "...AHWWNNWWNNWWHA.....", "...AHWWNNWWNNWWHA.....", "...AHWWWWEEWWWWHA.....", "...AHHWWWWWWWWHHA.....", "..ACCCCCCCCCCCCCCA....", "..ACCCCCCCCCCCCCCA....", "..ACCCCCCCCCCCCCCA....", "..ACCCCCCCCCCCCCCA....", "...ACCCCCCCCCCCCA.....", "...ACCCACCCCACCCA.....", "....ACA.ACCA.ACA......", "....AA...AA...AA......", "......................", "......................", "......................", "......................"],
+  "vcat_b":["......................", "...LL..........LL.....", "..LLLL........LLLL....", "..LLDDL......LDDLL....", "...LDDDDLLLLDDDDL.....", "...LDDDDDDDDDDDDL.....", "...DDNNDDDDDDNNDD.....", "...DDNNDDDDDDNNDD.....", "..WDDDDDBBBBDDDDDW....", "..WWDDDBBEEBBDDDWW....", "....DDDDBBBBDDDD......", "....ACCCCCCCCCCA......", "...ACCCFFFFFFCCCA.....", "...ACCCFWWWWFCCCA.....", "...ACCCCCCCCCCCCA.....", "...ACCCCCCCCCCCCA.....", "...ACCA......ACCA.....", "...ACA........ACA.....", "..AAA..........AAA....", "......................", "......................", "......................"],
+  "vrab_b":["....LL......LL........", "....LBL....LBL........", "....LBL....LBL........", "....LBL....LBL........", "....LLL....LLL........", ".....LLDDDDLL.........", "....LDDDDDDDDL........", "...LDDNNDDNNDDL.......", "...LDDDDDDDDDDL.......", "....DDDBBBBDDD........", ".....DDWWWWDD.........", "....ACCCCCCCCCCA......", "...ACCCFFFFFFCCCA.....", "...ACCCCCCCCCCCCA.....", "...ACCCCCCCCCCCCA.....", "...ACCCCCCCCCCCCA.....", "...ACCA......ACCA.....", "...ACA........ACA.....", "..AAA..........AAA....", "......................", "......................", "......................"],
+  "vtur_b":["......................", "......................", ".......DDDDDD.........", "......DDNDDNDD........", "......DDDDDDDD........", ".......DDEEDD.........", "....AACCCCCCCCAA......", "...ACCFFFFFFFFCCA.....", "..ACCFFWWFFWWFFCCA....", "..ACFFWWFFFFWWFFCA....", "..ACFFFFWWWWFFFFCA....", "..ACFFWWFFFFWWFFCA....", "..ACCFFWWFFWWFFCCA....", "...ACCFFFFFFFFCCA.....", "....AACCCCCCCCAA......", "...ACCA......ACCA.....", "...ACA........ACA.....", "..AAA..........AAA....", "......................", "......................", "......................", "......................"],
+  "vham_b":["......................", "......................", "......LL....LL........", ".....LLLL..LLLL.......", "....LLDDDDDDDDLL......", "...LDDDDDDDDDDDDL.....", "...DDDNNDDDDNNDDD.....", "..BDDDDDDDDDDDDDDB....", "..BBDDDDBBBBDDDDBB....", "..BBBDDDBEEBDDDBBB....", "...BBDDDDDDDDDDBB.....", "....ACCCCCCCCCCA......", "...ACCCCFFFFCCCCA.....", "...ACCCCFWWFCCCCA.....", "...ACCCCCCCCCCCCA.....", "...ACCCCCCCCCCCCA.....", "...ACCA......ACCA.....", "...ACA........ACA.....", "..AAA..........AAA....", "......................", "......................", "......................"],
   "lockbox":["......................", "....AAAAAAAAAAAAAA....", "...ALLLLLLLLLLLLLLA...", "...ALWWWWWWWWWWWWLA...", "...ALLLLLLLLLLLLLLA...", "..AAAAAAAAAAAAAAAAAA..", "..ABBBBBBBBBBBBBBBBA..", "..ABWBBBBBBBBBBBBWBA..", "..ABWBBBBMMMMBBBBWBA..", "..ABWBBBMBBBBMBBBWBA..", "..ABWBBBMBBBBMBBBWBA..", "..ABWBBNNNNNNNNBBWBA..", "..ABWBBNNNSSNNNBBWBA..", "..ABWBBNNNSSNNNBBWBA..", "..ABWBBNNNNNNNNBBWBA..", "..ABBBBBBBBBBBBBBBBA..", "..AAAAAAAAAAAAAAAAAA..", "......................"],
   "giftbox":["......................", "....AAAAAAAAAAAAAA....", "...AGGGGGGGGGGGGGGA...", "...AGYYYYYYYYYYYYGA...", "...AGGGGGGGGGGGGGGA...", "..AAAAAAAAAAAAAAAAAA..", "..ACCCCCCCCCCCCCCCCA..", "..ACYCCCCCCCCCCCCYCA..", "..ACYCCCCGGGGCCCCYCA..", "..ACYCCCGYYYYGCCCYCA..", "..ACYCCGYYRRYYGCCYCA..", "..ACYCCGYRRRRYGCCYCA..", "..ACYCCGYYRRYYGCCYCA..", "..ACYCCCGYYYYGCCCYCA..", "..ACYCCCCGGGGCCCCYCA..", "..ACCCCCCCCCCCCCCCCA..", "..AAAAAAAAAAAAAAAAAA..", "......................"],
   "ob_a":["....................", "......AAAAAA........", ".....AHHHHHHA.......", ".....AHEEEEHA.......", ".....AHHHHHHA.......", "......AHHHHA........", "....AACCCCCCAA......", "...ACCCCCCCCCCA.....", "...ACC.CCCC.CCA.....", "...AC..CCCC..CA.....", "...ACCCCCCCCCCA.....", "...ACC.CCCC.CCA.....", "...ACCCCCCCCCCA.....", "....ACCCCCCCCA......", "....AC.CCCC.CA......", "....ACCCCCCCCA......", "....ACCA..ACCA......", "....ACA....ACA......", "....AC......CA......", "...AACA....ACAA.....", "...AAA......AAA.....", "...................."],
@@ -2138,6 +2161,14 @@ const BOSSPAL={
   "boss3":{A:'#0e0b08',C:'#463628',B:'#2a2018',D:'#f0d0b0',E:'#101010',F:'#8a8a92',R:'#8a2f2f'},
   "boss4":{A:'#0e2620',C:'#7fcbb4',B:'#2a5a4c',D:'#ffffff',E:'#0e2620',F:'#f0f8f4'},
   "boss_last":{A:'#0a0810',C:'#5a2d5e',B:'#2a0f38',D:'#ffffff',E:'#ff6a4a',F:'#3a1d3e',W:'#7a3d7e'},
+  "gv_1":{"A": "#141024", "H": "#4a5a8a", "D": "#c8d4f0", "N": "#0e1020", "E": "#2a3050", "C": "#36406a", "F": "#ffb347", "W": "#fff2c8"},
+  "gv_2":{"A": "#141024", "H": "#5a5a6a", "D": "#cfd4e4", "N": "#0e1020", "E": "#2a2c3c", "C": "#3e4256", "W": "#9aa2b8"},
+  "gv_3":{"A": "#161028", "H": "#6a4a8a", "D": "#e0d0f0", "N": "#100e20", "E": "#3a2a50", "C": "#4a3468", "F": "#c8a24a", "W": "#f6ecd8"},
+  "gv_4":{"A": "#12141c", "H": "#3a4a44", "C": "#2c3a36", "N": "#080a10", "E": "#141a18", "W": "#e8e4d4"},
+  "vcat_b":{"A": "#2a2028", "C": "#8a8494", "D": "#b6b0c2", "L": "#6f6a7e", "N": "#221e28", "B": "#e4e0ec", "E": "#4a2430", "F": "#c23a3a", "W": "#fbf6ea"},
+  "vrab_b":{"A": "#2a2228", "C": "#e4dfd4", "D": "#f6f2ec", "L": "#d6c6ca", "N": "#221e28", "B": "#f2aebe", "F": "#e07a3a", "W": "#ffffff"},
+  "vtur_b":{"A": "#1c2a1c", "C": "#86a862", "D": "#a4c288", "N": "#1e2418", "E": "#3a2a20", "F": "#4f6f34", "W": "#c8a24a"},
+  "vham_b":{"A": "#2a1e18", "C": "#c89a60", "D": "#e6be8a", "L": "#a87a48", "N": "#221e18", "B": "#f6e0bc", "E": "#4a2c20", "F": "#7fc95a", "W": "#f2c14e"},
   "lockbox":{"A":"#2a1c12","L":"#a87a48","W":"#c89a60","B":"#8a5c34","M":"#c8ccd8","N":"#9aa0ae","S":"#2a2e38"},
   "giftbox":{"A":"#2a1c30","G":"#e0b43a","Y":"#f6dc86","C":"#7a4a8a","R":"#e05a5a"},
   "ob_a":{"A": "#181428", "H": "#4a3a2a", "C": "#6a5a3a", "E": "#ffd06a"},
@@ -2181,7 +2212,7 @@ function newState(ch,df,run){
     hearts:(DIFF[df||'normal']||{}).hearts||5, maxHearts:(DIFF[df||'normal']||{}).hearts||5,
     gold:0, bosses:{}, dead:{}, chests:{}, steps:0, wins:0, wrongs:0,
     items:{sword:0, shield:0}, cosmetics:{}, equip:{hat:null,face:null,body:null,cape:null,aura:null}, keys:{}, time:0, name:'',
-    mode:'race', chap:0, inspected:{}};
+    mode:'race', chap:0, inspected:{}, party:[]};
 }
 /* -------- [STATE] 상점 아이템 (각 1개 제한) -------- */
 /* =======================================================================
@@ -2362,10 +2393,12 @@ const HERO_PAL = {
   heroine:{out:'#241a2b',hair:'#6b4226',hairHi:'#c8a24a',hairSh:'#452718',
            skin:'#fbd8b2',skinSh:'#dcb488',shirt:'#f4ead2',shirtHi:'#fffaf0',shirtSh:'#cfc0a0',
            pant:'#d8b04a',pantSh:'#a8862e',shoe:'#3a3350',eye:'#2a2438',pig:true},
-  /* 용사 — 어른이 된 소년. 그때 그 노란 옷을 아직 입고 있다. 다만 색이 바랬다. */
-  hero:{out:'#1e1626',hair:'#7a4520',hairHi:'#8f5a2a',hairSh:'#4e2c12',
-           skin:'#e8c298',skinSh:'#c4956a',shirt:'#c9a132',shirtHi:'#e0bd52',shirtSh:'#9a7418',
-           pant:'#3a5a90',pantSh:'#26406a',shoe:'#2e2840',eye:'#241f30'},
+  /* 용사 — 어른이 된 소년. 노란 옷은 바랬고, 그 위에 낡은 갑옷을 걸쳤다.
+     오른쪽 뺨에 흉터, 눈매는 날카롭고 눈 아래엔 그늘이 있다. */
+  hero:{out:'#171220',hair:'#6a3c1c',hairHi:'#82502a',hairSh:'#3e2210',
+           skin:'#dcb489',skinSh:'#a8785a',shirt:'#a8862c',shirtHi:'#c2a044',shirtSh:'#7a5e14',
+           pant:'#33486e',pantSh:'#1f2e4c',shoe:'#241f2e',eye:'#1c1826',
+           sleeve:true, vet:true, armor:'#8a90a4', armorSh:'#464c5c', scar:'#a04038'},
   chara_musa:{out:'#141418',hair:'#20202a',hairHi:'#3a3a48',hairSh:'#101018',
            skin:'#f0c89a',skinSh:'#d0a070',shirt:'#26272f',shirtHi:'#3a3c48',shirtSh:'#16161c',
            pant:'#242430',pantSh:'#141419',shoe:'#141418',eye:'#2a2438',
@@ -2492,6 +2525,39 @@ function drawHero(g, ox, oy, U, pal, view, state, f, n){
     D(10,23+bd,10,2, lit(pal.shirt,0.25)); D(10,31,12,2, pal.shirtSh);
     const fx=16+st; D(fx,34,6,1, lit(pal.pant,0.2)); D(fx,41,6,1, lit(pal.shoe,0.3));
   }
+
+  /* ---- 역전의 용사: 갑옷 · 흉터 · 날카롭고 지친 얼굴 ----
+     pal.vet 가 켜지면 위 그림 위에 덧그린다. */
+  if(pal.vet){
+    const AR=pal.armor||'#8a90a4', ARH=lit(AR,0.30), ARS=pal.armorSh||'#4a5060';
+    const SC=pal.scar||'#a04038';
+    if(view==='down'){
+      D(8,22+bd,16,3, AR);  D(8,22+bd,16,1, ARH);            // 가슴 갑옷 상단
+      D(9,25+bd,14,4, AR);  D(9,28+bd,14,1, ARS);            // 흉갑
+      D(15,23+bd,2,6, ARS);                                  // 가운데 이음선
+      D(4,22+bd,5,3, AR);   D(23,22+bd,5,3, AR);             // 어깨 보호대
+      D(4,22+bd,5,1, ARH);  D(23,22+bd,5,1, ARH);
+      D(8,30+bd,16,1, ARS);                                  // 갑옷 밑단
+      D(11,12+hd,4,2, pal.hairSh); D(17,12+hd,4,2, pal.hairSh);   // 굵고 낮은 눈썹
+      D(11,13+hd,2,1, pal.out);    D(19,13+hd,2,1, pal.out);      // 눈매를 날카롭게
+      D(11,18+hd,4,1, pal.skinSh); D(17,18+hd,4,1, pal.skinSh);   // 눈 아래 그늘(지친 얼굴)
+      D(10,15+hd,2,1, SC); D(11,16+hd,2,1, SC); D(12,17+hd,1,1, SC); // 오른쪽 뺨 흉터
+    } else if(view==='side'){
+      D(10,22+bd,12,3, AR); D(10,22+bd,12,1, ARH);
+      D(10,25+bd,12,4, AR); D(10,28+bd,12,1, ARS);
+      D(10,30+bd,12,1, ARS);
+      D(14+arm,22+bd,4,3, AR);                               // 어깨
+      D(17,13+hd,3,1, pal.hairSh);                           // 눈썹
+      D(18,13+hd,2,1, pal.out);
+      D(17,18+hd,3,1, pal.skinSh);                           // 눈 아래 그늘
+      D(18,15+hd,2,1, SC); D(19,16+hd,2,1, SC); D(20,17+hd,1,1, SC); // 흉터(측면에서 보임)
+    } else {                                                  // 뒤: 등판 갑옷
+      D(8,22+bd,16,3, AR);  D(8,22+bd,16,1, ARH);
+      D(9,25+bd,14,5, AR);  D(9,29+bd,14,1, ARS);
+      D(15,23+bd,2,7, ARS);
+      D(4,22+bd,5,3, AR);   D(23,22+bd,5,3, AR);
+    }
+  }
 }
 
 /* 필드/미리보기 공용: dir(U/D/L/R)+이동여부로 프레임 골라 그림. 몸통은 논리 w×h(기본 16×22) 차지 */
@@ -2599,6 +2665,18 @@ function lbInit(){
           LB.db=firebase.database(); LB.on=true; LB.ready=true;
           console.log('[리더보드] 온라인 연결됨');
         }catch(e){ console.warn('리더보드 초기화 실패',e); LB.ready=true; }
+        /* 교사 로그인용 인증 모듈 (오답 기록 열람에만 쓴다) */
+        const s3=document.createElement('script');
+        s3.src='https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js';
+        s3.onload=()=>{
+          try{
+            LB.auth=firebase.auth();
+            /* 공용 태블릿이므로 로그인 상태를 남기지 않는다 (새로고침하면 로그아웃) */
+            LB.auth.setPersistence(firebase.auth.Auth.Persistence.NONE).catch(()=>{});
+            LB.authReady=true;
+          }catch(e){ console.warn('인증 초기화 실패',e); }
+        };
+        document.head.appendChild(s3);
       };
       s2.onerror=()=>{ LB.ready=true; };
       document.head.appendChild(s2);
@@ -4080,7 +4158,7 @@ function drawMapTo(g,cs,big){
     const p=key.split(','), c=+p[0], r=+p[1], d=MAP[key];
     const mx=c*cs+cs/2, my=r*cs+cs/2, u=cs/16;
     if(d.boss){
-      const dead=!!S.bosses[d.boss], last=(d.boss==='last'||d.boss==='king'||d.boss==='dracula'||d.boss==='dogking'||d.boss==='scientist');
+      const dead=!!S.bosses[d.boss], last=bossIsFinal(d.boss);
       const R2=cs*(last?0.30:0.24);
       g.fillStyle='#000';
       g.beginPath(); g.moveTo(mx,my-R2-u); g.lineTo(mx+R2+u,my); g.lineTo(mx,my+R2+u); g.lineTo(mx-R2-u,my); g.closePath(); g.fill();
@@ -4254,6 +4332,12 @@ function runStage(list){
     try{
       if(s.clear){ actorClear(); return; }
       if(s.pdir){ S.dir=s.pdir; return; }
+      if(s.join){                                  // 동료가 되어 뒤따라 온다
+        const a=actorFind(s.join);
+        if(a) ACTORS.list.splice(ACTORS.list.indexOf(a),1);
+        partyJoin(s.join); return;
+      }
+      if(s.leave){ partyLeave(s.leave); return; }
       if(s.in){
         const from=s.from||'R';
         const tx=(s.x!==undefined? s.x : (from==='L'?96:from==='R'?164:128));
@@ -4288,6 +4372,436 @@ function runStage(list){
       }
     }catch(e){}
   });
+}
+
+
+
+
+/* ==================== [WRONGLOG] 오답 기록 ====================
+   경쟁(랭킹) 모드에서 틀린 문제를 기기에 남긴다. 주소 뒤에 #log 를 붙이면 열람.
+   저장 위치: localStorage['mz_wrong']  (최근 600건까지, 오래된 것부터 밀려남)
+   ============================================================== */
+const WLOG_KEY='mz_wrong', WLOG_MAX=600;
+function wlogRead(){ try{ return JSON.parse(localStorage.getItem(WLOG_KEY))||[]; }catch(e){ return []; } }
+function wlogWrite(a){ try{ localStorage.setItem(WLOG_KEY, JSON.stringify(a.slice(-WLOG_MAX))); }catch(e){} }
+function wlogClear(){ try{ localStorage.removeItem(WLOG_KEY); }catch(e){} }
+
+/* 지금 놓인 카드로 식을 글자로 만든다. fill: 'ans'=정답 / 'val'=학생이 놓은 것 / 'blank'=문제 */
+function eqToText(fill){
+  const q=battle.q; if(!q || !q.tok) return '';
+  let s='';
+  q.tok.forEach((t,i)=>{
+    if(t.t==='eq'){ s+=' = '; return; }
+    if(t.t==='slot'){
+      if(fill==='ans') s+=t.ans;
+      else if(fill==='blank') s+='□';
+      else{ const el=battle.slots.find(x=>+x.dataset.i===i); s += (el&&el.dataset.val)||'?'; }
+      return;
+    }
+    s += (t.t==='o') ? (' '+t.v+' ') : String(t.v);
+  });
+  return s.replace(/\s+/g,' ').trim();
+}
+/* 오답 유형 자동 진단 */
+function wlogDiagnose(ans, got, q){
+  const A=parseInt(ans,10), G=parseInt(got,10);
+  if(isNaN(A)||isNaN(G)) return '미입력·시간초과';
+  const d=G-A;
+  if(d===-10) return '받아올림 빠뜨림';
+  if(d===10)  return '받아내림 처리 오류';
+  if(String(G)===String(A).split('').reverse().join('') && String(A).length>1) return '자릿수 뒤바뀜';
+  if(d===1||d===-1) return '하나 차이(셈 실수)';
+  if(q && q.indexOf('×')>=0) return '곱셈구구 미숙';
+  if(q && q.indexOf('-')>=0 && d>0) return '뺄셈을 덧셈처럼';
+  return '기타';
+}
+function wlogAdd(timeout){
+  try{
+    if(isStory()) return;                       // 이야기 모드(집 학습)는 기록하지 않는다
+    if(!battle || !battle.q) return;
+    const mc=!!battle.q.mc;
+    const rec={
+      t: Date.now(),
+      name: (S.name||getName()||'익명'),
+      char: (CHAR_SLOTS.find(c=>c.key===S.char)||{}).name || S.char,
+      diff: (DIFF[S.diff]||{}).label || S.diff,
+      math: MATH_LABEL[mathModeNow()] || mathModeNow(),
+      q:   mc ? String(battle.q.text) : eqToText('blank'),
+      ans: mc ? String(battle.q.answer) : eqToText('ans'),
+      got: timeout ? '(시간 초과)' : (mc ? String(battle.lastGiven!=null?battle.lastGiven:'') : eqToText('val')),
+      where: rgLabel(scr.def),
+      boss: battle.isBoss ? ((battle.foe.def&&battle.foe.def.name)||battle.foe.id||'') : ''
+    };
+    /* 진단은 '정답 숫자'와 '학생이 쓴 숫자'로 판단 */
+    const ansN = mc ? rec.ans : (eqToText('ans').split('=')[1]||'').trim();
+    const gotN = timeout ? '' : (mc ? rec.got : (eqToText('val').split('=')[1]||'').trim());
+    rec.why = timeout ? '시간 초과' : wlogDiagnose(ansN, gotN, rec.q);
+    const a=wlogRead(); a.push(rec); wlogWrite(a);   // 이 기기에 먼저 (안전장치)
+    try{ wlogSend(rec); }catch(e){}                  // 그리고 온라인으로
+  }catch(e){}
+}
+
+
+/* -------- 온라인 오답 기록 (Firebase) --------
+   경로: wrong/{반코드}/{자동키}
+   · 반 코드가 사실상 열람 통로가 된다. 추측하기 어려운 값을 쓰세요.
+   · '이름 가리기'를 켜면 성만 남기고 보낸다 (홍길동 → 홍○○).
+   · 오래된 기록은 [오래된 기록 정리]로 지울 수 있다.                        */
+function wlogClassCode(){
+  try{ return localStorage.getItem('mz_class') || '1반'; }catch(e){ return '1반'; }
+}
+function wlogSetClass(v){ try{ localStorage.setItem('mz_class', String(v||'1반').slice(0,24)); }catch(e){} }
+function wlogAnonOn(){ try{ return localStorage.getItem('mz_log_anon')==='1'; }catch(e){ return false; } }
+function wlogSetAnon(v){ try{ localStorage.setItem('mz_log_anon', v?'1':'0'); }catch(e){} }
+function wlogMaskName(n){
+  n=String(n||'익명');
+  if(!wlogAnonOn() || n.length<2) return n;
+  return n[0] + '○'.repeat(n.length-1);
+}
+function wlogOnlineOn(){ try{ return localStorage.getItem('mz_log_online')!=='0'; }catch(e){ return true; } }
+function wlogSetOnline(v){ try{ localStorage.setItem('mz_log_online', v?'1':'0'); }catch(e){} }
+
+function wlogSend(rec){
+  if(!wlogOnlineOn()) return;
+  if(!(LB.on && LB.db)) return;                 // 순위표와 같은 연결을 쓴다
+  try{
+    LB.db.ref('wrong/'+wlogClassCode()).push(
+      Object.assign({}, rec, {name: wlogMaskName(rec.name)})
+    );
+  }catch(e){ console.warn('오답 기록 전송 실패', e); }
+}
+function wlogFetchOnline(cb){
+  if(!(LB.on && LB.db)){ cb(null,'온라인에 연결되지 않았습니다.'); return; }
+  try{
+    LB.db.ref('wrong/'+wlogClassCode()).get()
+      .then(snap=>{ const a=[]; snap.forEach(ch=>{ const v=ch.val(); if(v) { v.__key=ch.key; a.push(v); } }); cb(a,null); })
+      .catch(err=>cb(null, (err&&err.message)||'읽기 실패'));
+  }catch(e){ cb(null, e.message||'읽기 실패'); }
+}
+function wlogPurgeOnline(days, cb){
+  if(!(LB.on && LB.db)){ cb('온라인에 연결되지 않았습니다.'); return; }
+  const cut=Date.now()-days*86400000;
+  wlogFetchOnline((rows,err)=>{
+    if(err){ cb(err); return; }
+    const old=rows.filter(r=>!r.t || r.t<cut);
+    if(!old.length){ cb(null,0); return; }
+    let n=0;
+    old.forEach(r=>{
+      try{ LB.db.ref('wrong/'+wlogClassCode()+'/'+r.__key).remove(); n++; }catch(e){}
+    });
+    cb(null,n);
+  });
+}
+
+
+/* 위쪽 버튼줄 · 설정 (로컬/온라인 공용) */
+function wlogBarHTML(isOnline){
+  return '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">'+
+    '<button id="wlTabLocal"  style="padding:8px 14px;'+(!isOnline?'background:#f2c14e;color:#201a10;font-weight:700':'')+'">이 기기</button>'+
+    '<button id="wlTabOnline" style="padding:8px 14px;'+( isOnline?'background:#8ad6f2;color:#101c20;font-weight:700':'')+'">온라인(반 전체)</button>'+
+    '<span style="width:12px"></span>'+
+    '<button id="wlCsv" style="padding:8px 14px">CSV 복사</button>'+
+    '<button id="wlDl"  style="padding:8px 14px">CSV 내려받기</button>'+
+    '<button id="wlDel" style="padding:8px 14px;background:#5a2020;color:#fff">'+(isOnline?'온라인 기록 비우기':'이 기기 기록 삭제')+'</button>'+
+    (isOnline?'<button id="wlPurge" style="padding:8px 14px">30일 지난 기록 정리</button>':'')+
+    ((isOnline && wlogUser())?'<button id="wlLogout" style="padding:8px 14px">로그아웃</button>':'')+
+    '<button id="wlClose" style="padding:8px 14px">닫기</button>'+
+  '</div>'+
+  '<div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-bottom:14px;'+
+    'padding:8px 10px;background:#1b1826;border:1px solid #3a3450;border-radius:6px">'+
+    '<label>반 코드 <input id="wlClass" value="'+wlogClassCode().replace(/"/g,'')+'" '+
+      'style="width:150px;padding:4px 6px" placeholder="예: 3학년2반-x7k"></label>'+
+    '<label><input type="checkbox" id="wlAnon" '+(wlogAnonOn()?'checked':'')+'> 이름 가리기(홍○○)</label>'+
+    '<label><input type="checkbox" id="wlOn" '+(wlogOnlineOn()?'checked':'')+'> 온라인으로 보내기</label>'+
+    '<span style="color:#9aa4b8">반 코드가 열람 통로입니다. 추측하기 어렵게 지으세요.</span>'+
+  '</div>';
+}
+/* 요약 + 표 (공용) */
+function wlogTableHTML(rows){
+  const byWhy={}, byName={}, byQ={};
+  rows.forEach(r=>{ byWhy[r.why]=(byWhy[r.why]||0)+1; byName[r.name]=(byName[r.name]||0)+1;
+                    byQ[r.q]=(byQ[r.q]||0)+1; });
+  const top=o=>Object.keys(o).sort((a,b)=>o[b]-o[a]).slice(0,8)
+                .map(k=>'<li>'+k+' — <b>'+o[k]+'</b>회</li>').join('') || '<li>기록 없음</li>';
+  let h='<div style="display:flex;gap:18px;flex-wrap:wrap;margin-bottom:16px">'+
+    '<div style="min-width:240px"><b style="color:#8ad67a">오답 유형</b><ul>'+top(byWhy)+'</ul></div>'+
+    '<div style="min-width:200px"><b style="color:#8ad6f2">학생별</b><ul>'+top(byName)+'</ul></div>'+
+    '<div style="min-width:240px"><b style="color:#ffb347">자주 틀린 문제</b><ul>'+top(byQ)+'</ul></div>'+
+    '</div><table style="border-collapse:collapse;width:100%;font-size:12px">'+
+    '<tr style="background:#241f33;color:#f2c14e">'+
+    ['시각','이름','캐릭터','난이도','문제','정답','학생 답','진단','위치']
+      .map(x=>'<th style="border:1px solid #3a3450;padding:5px">'+x+'</th>').join('')+'</tr>';
+  rows.forEach(r=>{
+    h+='<tr>'+[new Date(r.t).toLocaleString('ko-KR'),r.name,r.char,r.diff,
+      r.q,r.ans,'<b style="color:#f0968a">'+r.got+'</b>',r.why,r.where]
+      .map(v=>'<td style="border:1px solid #2c2740;padding:4px">'+v+'</td>').join('')+'</tr>';
+  });
+  return h+'</table>';
+}
+/* 공용 버튼 배선 */
+function wlogWireBar(ov, isOnline, rows){
+  const csv=wlogCSV(rows.slice().reverse());
+  const q=id=>ov.querySelector('#'+id);
+  q('wlClose').onclick=()=>{
+    if(wlogUser()) wlogLogout();                 // 공용 기기: 닫으면 로그아웃
+    ov.remove(); try{ location.hash=''; }catch(e){}
+  };
+  if(q('wlLogout')) q('wlLogout').onclick=()=>{ wlogLogout(()=>{ ov.remove(); openWrongLog(true); }); };
+  q('wlTabLocal').onclick =()=>{ ov.remove(); openWrongLog(false); };
+  q('wlTabOnline').onclick=()=>{ ov.remove(); openWrongLog(true); };
+  q('wlCsv').onclick=()=>{
+    try{ navigator.clipboard.writeText(csv); alert('CSV를 복사했습니다.\n엑셀에 붙여넣기 하세요.'); }
+    catch(e){ alert('복사 실패. 내려받기를 쓰세요.'); } };
+  q('wlDl').onclick=()=>{
+    try{
+      const b=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(b); a.download=(isOnline?'오답기록_'+wlogClassCode():'오답기록')+'.csv'; a.click();
+    }catch(e){ alert('내려받기를 지원하지 않는 환경입니다.'); } };
+  q('wlClass').onchange=e=>{ wlogSetClass(e.target.value); alert('반 코드를 "'+wlogClassCode()+'"로 바꿨습니다.'); };
+  q('wlAnon').onchange =e=>wlogSetAnon(e.target.checked);
+  q('wlOn').onchange   =e=>wlogSetOnline(e.target.checked);
+  q('wlDel').onclick=()=>{
+    if(!isOnline){
+      if(confirm('이 기기의 오답 기록을 모두 지울까요?\n되돌릴 수 없습니다.')){ wlogClear(); ov.remove(); openWrongLog(false); }
+      return;
+    }
+    if(!confirm('온라인에 모인 "'+wlogClassCode()+'" 반의 오답 기록을 전부 지울까요?')) return;
+    if(!confirm('되돌릴 수 없습니다. 정말 지울까요?')) return;
+    try{ LB.db.ref('wrong/'+wlogClassCode()).remove(); alert('지웠습니다.'); ov.remove(); openWrongLog(true); }
+    catch(e){ alert('삭제 실패: '+e.message); }
+  };
+  if(isOnline && q('wlPurge')) q('wlPurge').onclick=()=>{
+    wlogPurgeOnline(30,(err,n)=>{
+      if(err){ alert('정리 실패: '+err); return; }
+      alert(n? (n+'건을 지웠습니다.') : '30일이 지난 기록이 없습니다.');
+      ov.remove(); openWrongLog(true);
+    });
+  };
+}
+/* 온라인 화면 */
+function wlogLoginFormHTML(){
+  return '<div style="max-width:420px;margin:24px auto;padding:18px;background:#1b1826;'+
+    'border:2px solid #3a3450;border-radius:8px">'+
+    '<div style="color:#f2c14e;font-size:16px;font-weight:700;margin-bottom:6px">교사 로그인</div>'+
+    '<div style="color:#9aa4b8;margin-bottom:14px;font-size:12px">'+
+      '오답 기록은 교사만 볼 수 있습니다.<br>학생 기기는 기록을 보내기만 하고, 열람은 되지 않습니다.</div>'+
+    '<label style="display:block;margin-bottom:8px">이메일<br>'+
+      '<input id="wlEmail" type="email" autocomplete="username" style="width:100%;padding:7px"></label>'+
+    '<label style="display:block;margin-bottom:12px">비밀번호<br>'+
+      '<input id="wlPw" type="password" autocomplete="current-password" style="width:100%;padding:7px"></label>'+
+    '<button id="wlDoLogin" style="width:100%;padding:10px;background:#f2c14e;color:#201a10;'+
+      'font-weight:700;border:0;border-radius:6px">로그인</button>'+
+    '<div id="wlErr" style="color:#f0968a;margin-top:10px;min-height:18px"></div>'+
+    '<div style="color:#7a8496;margin-top:12px;font-size:11px">'+
+      '공용 태블릿을 고려해 로그인 상태는 저장되지 않습니다.<br>화면을 닫거나 새로고침하면 자동으로 로그아웃됩니다.</div>'+
+  '</div>';
+}
+function wlogRenderOnline(){
+  const ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;z-index:99999;background:#12101a;color:#eee;'+
+    'font:13px/1.6 sans-serif;overflow:auto;padding:14px';
+  const signed=!!wlogUser();
+  ov.innerHTML='<div style="max-width:1000px;margin:0 auto">'+
+    '<h2 style="color:#8ad6f2;margin:0 0 4px">오답 기록 — 온라인 (반: '+wlogClassCode()+')</h2>'+
+    '<div id="wlHead" style="color:#9aa4b8;margin-bottom:12px">'+
+      (signed ? ('로그인: '+wlogUser().email+' · 불러오는 중…') : '교사 로그인이 필요합니다.')+'</div>'+
+    wlogBarHTML(true)+'<div id="wlBody"></div></div>';
+  document.body.appendChild(ov);
+  wlogWireBar(ov, true, []);
+  if(!signed){
+    ov.querySelector('#wlBody').innerHTML = wlogLoginFormHTML();
+    const go=()=>{
+      const e=ov.querySelector('#wlEmail').value, p=ov.querySelector('#wlPw').value;
+      ov.querySelector('#wlErr').textContent='로그인 중…';
+      wlogLogin(e,p,(err)=>{
+        if(err){ ov.querySelector('#wlErr').textContent=err; return; }
+        ov.remove(); wlogRenderOnline();
+      });
+    };
+    ov.querySelector('#wlDoLogin').onclick=go;
+    ov.querySelector('#wlPw').onkeydown=ev=>{ if(ev.key==='Enter') go(); };
+    return;
+  }
+  wlogFetchOnline((rows,err)=>{
+    const body=ov.querySelector('#wlBody');
+    if(err){
+      body.innerHTML='<div style="color:#f0968a;padding:12px;border:1px solid #5a2020;border-radius:6px">'+
+        '온라인 기록을 읽지 못했습니다 — '+err+'<br><br>'+
+        '· 인터넷 연결과 반 코드를 확인하세요.<br>'+
+        '· 이 계정에 열람 권한이 없을 수 있습니다. Firebase 보안 규칙의 '+
+        '<b>wrong</b> 경로 <b>.read</b> 조건에 이 계정의 UID가 들어 있는지 확인하세요.<br>'+
+        '· 현재 로그인: <b>'+(wlogUser()?wlogUser().email+' (UID '+wlogUser().uid+')':'없음')+'</b></div>';
+      return;
+    }
+    rows.sort((a,b)=>(b.t||0)-(a.t||0));
+    const hd=ov.querySelector('#wlHead');
+    if(hd) hd.textContent='로그인: '+(wlogUser()?wlogUser().email:'-')+' · 이 반에 모인 '+rows.length+'건';
+    body.innerHTML=wlogTableHTML(rows);
+    wlogWireBar(ov, true, rows);
+  });
+}
+
+
+/* -------- 교사 로그인 (오답 기록 열람 전용) --------
+   · 학생 기기는 로그인하지 않는다 → 기록은 '보내기'만 된다.
+   · 열람은 교사 계정으로 로그인한 뒤에만 가능하다.
+   · 공용 태블릿을 고려해 로그인 상태를 저장하지 않는다(새로고침 시 로그아웃).
+   · Firebase 콘솔에서 [Authentication → 이메일/비밀번호]를 켜고
+     교사 계정 하나만 만들어 두세요. 보안 규칙은 함께 드린 안내 문서를 참고하세요. */
+function wlogUser(){ try{ return (LB.auth && LB.auth.currentUser) || null; }catch(e){ return null; } }
+function wlogAuthReady(){ return !!(LB.auth); }
+function wlogLogin(email, pw, cb){
+  if(!wlogAuthReady()){ cb('인증 기능을 불러오지 못했습니다. 인터넷 연결을 확인하세요.'); return; }
+  LB.auth.signInWithEmailAndPassword(String(email||'').trim(), String(pw||''))
+    .then(()=>cb(null))
+    .catch(err=>{
+      const c=(err&&err.code)||'';
+      let m=(err&&err.message)||'로그인 실패';
+      if(c.indexOf('wrong-password')>=0||c.indexOf('invalid-credential')>=0) m='비밀번호가 맞지 않습니다.';
+      else if(c.indexOf('user-not-found')>=0) m='등록되지 않은 계정입니다.';
+      else if(c.indexOf('too-many-requests')>=0) m='시도가 너무 많습니다. 잠시 뒤 다시 하세요.';
+      else if(c.indexOf('operation-not-allowed')>=0) m='Firebase 콘솔에서 [이메일/비밀번호] 로그인을 켜야 합니다.';
+      else if(c.indexOf('network')>=0) m='인터넷에 연결되지 않았습니다.';
+      cb(m);
+    });
+}
+function wlogLogout(cb){ try{ LB.auth.signOut().then(()=>cb&&cb()).catch(()=>cb&&cb()); }catch(e){ cb&&cb(); } }
+
+/* -------- 선생님용 열람 화면 (#log) -------- */
+function wlogCSV(rows){
+  const head=['시각','이름','캐릭터','난이도','문제유형','문제','정답','학생답','진단','위치','상대'];
+  const esc=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
+  const lines=[head.map(esc).join(',')];
+  rows.forEach(r=>lines.push([new Date(r.t).toLocaleString('ko-KR'),r.name,r.char,r.diff,
+    r.math,r.q,r.ans,r.got,r.why,r.where,r.boss].map(esc).join(',')));
+  return lines.join('\n');
+}
+function openWrongLog(online){
+  if(online){ wlogRenderOnline(); return; }
+  const rows=wlogRead().slice().reverse();
+  const ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;z-index:99999;background:#12101a;color:#eee;'+
+    'font:13px/1.6 sans-serif;overflow:auto;padding:14px';
+  ov.innerHTML='<div style="max-width:1000px;margin:0 auto">'+
+    '<h2 style="color:#f2c14e;margin:0 0 4px">오답 기록 — 이 기기</h2>'+
+    '<div style="color:#9aa4b8;margin-bottom:12px">이 태블릿에 저장된 '+rows.length+'건 '+
+      '(최대 '+WLOG_MAX+'건 보관)</div>'+
+    wlogBarHTML(false)+
+    wlogTableHTML(rows)+
+  '</div>';
+  document.body.appendChild(ov);
+  wlogWireBar(ov, false, rows);
+}
+
+/* ==================== [DEVWARP] 임시 테스트 워프 ====================
+   이야기 모드 시작 방에 '최종보스로 가는 문'을 놓는다.
+   DEV_UNLOCK_ALL 이 false 가 되면 이 기능도 전부 사라진다. (정식판 자동 제거)
+   ==================================================================== */
+function devWarpOn(){ return devUnlockOn() && isStory() && scr && scr.key===MAPSTART; }
+/* 걸어갈 수 있는 칸 중 오른쪽 위에 가까운 자리를 고른다 */
+function devWarpSpot(){
+  if(!scr) return null;
+  const ax=200, ay=PY+48;
+  let best=null, bd=1e9;
+  for(let ty=1;ty<ROWS-1;ty++)for(let tx=1;tx<COLS-1;tx++){
+    if(scr.solid[tx+','+ty]) continue;
+    const x=tx*TS+8, y=PY+ty*TS+8;
+    if(Math.abs(x-128)<28 && Math.abs(y-(PY+88))<28) continue;   // 시작 위치는 피한다
+    const d=Math.hypot(x-ax,y-ay);
+    if(d<bd){ bd=d; best={x,y}; }
+  }
+  return best;
+}
+function devWarpDraw(){
+  if(!devWarpOn()) return;
+  const p=devWarpSpot(); if(!p) return;
+  const t=TICK/9;
+  for(let i=3;i>=0;i--){                      // 소용돌이 고리
+    const r=4+i*3.2+Math.sin(t+i)*1.2;
+    cx.strokeStyle='rgba('+(170-i*18)+',120,255,'+(0.75-i*0.15).toFixed(2)+')';
+    cx.lineWidth=2;
+    cx.beginPath(); cx.ellipse(p.x, p.y, r, r*0.62, t*0.5+i, 0, 7); cx.stroke();
+  }
+  cx.fillStyle='rgba(240,230,255,.92)';
+  cx.beginPath(); cx.arc(p.x, p.y, 3, 0, 7); cx.fill();
+  cx.fillStyle='#ff9a8a'; cx.font='bold 8px sans-serif'; cx.textAlign='center';
+  cx.fillText('TEST', p.x, p.y-16);
+  cx.fillStyle='#c8b0ff'; cx.font='7px sans-serif';
+  cx.fillText('최종보스', p.x, p.y+20);
+  cx.textAlign='left';
+}
+function devWarpNear(){
+  if(!devWarpOn()) return false;
+  const p=devWarpSpot(); if(!p) return false;
+  return Math.abs(S.px-p.x)<24 && Math.abs(S.py-p.y)<26;
+}
+function devWarpToFinal(){
+  const rooms=STORY_MAPS[S.chap]||[];
+  const bl=rooms.filter(r=>r.boss);
+  if(!bl.length){ toast('이 이야기에는 최종보스가 없다.',1800); return; }
+  const finalId=bl[bl.length-1].boss;
+  let target=null;
+  for(const k in MAP) if(MAP[k].boss===finalId) target=k;
+  if(!target){ toast('최종보스 방을 찾지 못했다.',1800); return; }
+  rooms.forEach(r=>{ if(r.boss && r.boss!==finalId) S.bosses[r.boss]=1; });   // 중간보스 처리
+  S.hearts=S.maxHearts;
+  S.gold=Math.max(S.gold|0, 500);
+  gotoScreen(target,'U');
+  setTimeout(()=>toast('[테스트] 최종보스 방으로 건너왔다.\n중간보스는 자동 처리했다.',2600), 300);
+}
+
+/* ==================== [PARTY] 함께 걷는 동료 ====================
+   합류한 동료는 내가 지나간 자리를 따라 한 줄로 걷는다(기차 놀이).
+   전투에는 관여하지 않는다 — 보이는 연출이다.
+   ================================================================ */
+const TRAIL={buf:[]};
+const TRAIL_GAP=15;                        // 동료 사이 간격(발자취 칸 수)
+function trailReset(){
+  TRAIL.buf=[];
+  if(!S) return;
+  const n=TRAIL_GAP*6+4;
+  for(let i=0;i<n;i++) TRAIL.buf.push({x:S.px, y:S.py, d:S.dir||'D'});
+}
+function trailPush(){
+  const b=TRAIL.buf;
+  const last=b[0];
+  if(last && Math.abs(last.x-S.px)<0.6 && Math.abs(last.y-S.py)<0.6) return;   // 멈춰 있으면 안 밀린다
+  b.unshift({x:S.px, y:S.py, d:S.dir||'D'});
+  if(b.length > TRAIL_GAP*6+4) b.pop();
+}
+function partyList(){ return (S && S.party) ? S.party : []; }
+function drawParty(){
+  const L=partyList(); if(!L.length || !TRAIL.buf.length) return;
+  for(let i=L.length-1;i>=0;i--){          // 뒤쪽 동료를 먼저 그린다
+    const who=L[i];
+    const idx=Math.min(TRAIL.buf.length-1, (i+1)*TRAIL_GAP);
+    const p=TRAIL.buf[idx]; if(!p) return;
+    const prev=TRAIL.buf[Math.min(TRAIL.buf.length-1, idx+2)];
+    const moving = prev ? (Math.abs(prev.x-p.x)>0.3 || Math.abs(prev.y-p.y)>0.3) : false;
+    try{
+      const im=(IMG[who]&&IMG[who].w)||null;
+      const w=(im&&im.width)||16, h=(im&&im.height)||22;
+      cx.fillStyle='rgba(0,0,0,.22)';
+      cx.beginPath(); cx.ellipse(p.x, p.y+7, 6, 2.5, 0, 0, 7); cx.fill();
+      drawAvatar(cx, im, Math.round(p.x), Math.round(p.y-h+8), w, h, 1, TICK, {}, p.d,
+                 {char:who, moving:moving});
+    }catch(e){}
+  }
+}
+function partyJoin(who){
+  if(!S) return;
+  S.party = S.party || [];
+  if(S.party.indexOf(who)>=0) return;
+  S.party.push(who);
+  trailReset();
+  try{ save(); }catch(e){}
+  try{ toast('★ '+(dlgNameOf(who)||'동료')+'이(가) 함께 간다!',2400); }catch(e){}
+}
+function partyLeave(who){
+  if(!S || !S.party) return;
+  const i=S.party.indexOf(who);
+  if(i>=0){ S.party.splice(i,1); try{ save(); }catch(e){} }
 }
 
 /* ==================== [DLG] 초상화 대사창 시스템 ====================
@@ -4408,6 +4922,7 @@ function dlgClose(){
   ['dlg','dlgT'].forEach(id=>{ const p=$(id); p.classList.remove('show');
     const inr=p.querySelector('.dlgIn'); if(inr) inr.classList.remove('dlgDim'); });
   paused = DLG.prevPaused;
+  try{ flushToast(); }catch(e){}
   const cb=DLG.cb; DLG.cb=null;
   if(cb) try{ cb(); }catch(e){}
 }
@@ -4418,6 +4933,7 @@ function say(script, cb){
   DLG.i=0; DLG.cb=cb||null;
   DLG.prevPaused = paused; paused = true;
   DLG.on=true;
+  try{ hideToast(); }catch(e){}          // 떠 있던 안내문을 먼저 치운다
   dlgShowLine();
 }
 ['dlg','dlgT'].forEach(id=>{
@@ -4902,7 +5418,7 @@ STORY.ch8 = {
     {who:'heroine', text:'그럼 지금 이 몸은…'},
     {who:'chara_robot', text:'몸은 마을에 잠들어 있다.\n여기 있는 건, 깨어난 당신의 마음이다.'},
     {who:'heroine', text:'…그럼 됐어.\n마음만 있어도 갈 수는 있잖아.',
-     stage:[{out:'chara_robot', to:'R'}, {pdir:'D'}]} ],
+     stage:[{join:'chara_robot'}, {pdir:'D'}]} ],
 
   'region:castle':[
     {who:'heroine', text:'무너진 성터가 떠다녀.'},
@@ -4918,7 +5434,7 @@ STORY.ch8 = {
      stage:[{who:'chara_cat', do:'hop'}]},
     {who:'heroine', text:'괜찮아. 정말 괜찮아.\n맛있었으면 된 거야.'},
     {who:'chara_cat', text:'…나 이제부터 진짜 열심히 싸운다냥.',
-     stage:[{out:'chara_cat', to:'R'}, {pdir:'D'}]} ],
+     stage:[{join:'chara_cat'}, {pdir:'D'}]} ],
 
   'region:jo_palin':[
     {who:'chara_musa', text:'낭자가… 그 "그 아이"요?',
@@ -4926,7 +5442,7 @@ STORY.ch8 = {
     {who:'heroine', text:'아마도요.\n그런데 저는 아직 제가 누군지 반쯤밖에 몰라요.'},
     {who:'chara_musa', text:'나도 그렇소.\n반씩 아는 자 둘이면 하나는 되겠지.'},
     {who:'chara_musa', text:'같이 갑시다.',
-     stage:[{out:'chara_musa', to:'R'}, {pdir:'D'}]} ],
+     stage:[{join:'chara_musa'}, {pdir:'D'}]} ],
 
   'region:hm_lib':[
     {who:'chara_b', text:'…너, 아까 마왕성에서 구해낸 애 아니야?',
@@ -4936,7 +5452,7 @@ STORY.ch8 = {
     {who:'heroine', text:'네가 그때 가져온 그 보석 때문에,\n이 모든 게 시작됐거든.'},
     {who:'chara_b', text:'……'},
     {who:'chara_b', text:'그럼 내가 되돌리는 것도 도와야겠네.',
-     stage:[{out:'chara_b', to:'R'}, {pdir:'D'}]} ],
+     stage:[{join:'chara_b'}, {pdir:'D'}]} ],
 
   'region:timegate':[
     {who:'hero', text:'……',
@@ -4957,7 +5473,7 @@ STORY.ch8 = {
     {who:'heroine', text:'응. 근데 나도 내가 누군지 몰랐어.\n그냥 일으켜 주고 싶었어.'},
     {who:'hero', text:'…나는 네가 자고만 있는 줄 알았어.'},
     {who:'heroine', text:'아니.\n나도 계속 걷고 있었어.',
-     stage:[{who:'hero', do:'vanish'}, {pdir:'U'}]} ],
+     stage:[{join:'hero'}, {pdir:'U'}]} ],
 
   'boss:ob1':[
     {who:'boss:ob1', text:'…아.\n조금… 가벼워졌어.'},
@@ -5003,7 +5519,7 @@ STORY.ch7 = {
     {who:'chara_robot', text:'목적지가 같다면 동행을 제안한다.\n나는 나를 만든 자를 찾고 있다.'},
     {who:'hero', text:'나도 그렇다.\n누가 이걸 이렇게 만들었는지.'},
     {who:'chara_robot', text:'동행 성립.',
-     stage:[{who:'chara_robot', do:'hop'}, {out:'chara_robot', to:'R'}, {pdir:'D'}]} ],
+     stage:[{who:'chara_robot', do:'hop'}, {join:'chara_robot'}, {pdir:'D'}]} ],
 
   'region:jo_palent':[
     {who:'chara_musa', text:'게 섰거라! …아니, 그대는.',
@@ -5014,7 +5530,7 @@ STORY.ch7 = {
     {who:'hero', text:'……. 그 무사요?\n그대는 하나도 안 늙었는데.'},
     {who:'chara_musa', text:'늙을 시간이 없었소.\n계속 튕겨 다니느라.'},
     {who:'chara_musa', text:'같이 갑시다.\n나도 갚을 빚이 있소.',
-     stage:[{out:'chara_musa', to:'R'}, {pdir:'D'}]} ],
+     stage:[{join:'chara_musa'}, {pdir:'D'}]} ],
 
   'region:md_night':[
     {who:'hero', text:'낮이 있어야 할 자리에 밤이 끼어 있다.'},
@@ -5151,7 +5667,15 @@ function storyEvent(ev, cb){
 }
 
 function hideToast(){ const el=$('toast'); if(!el) return; clearTimeout(toast._t); el.classList.remove('show'); }
-function toast(t,ms){ if(battle&&battle.on) return; const el=$('toast'); el.textContent=t; el.classList.add('show');
+let _pendToast=null;
+function flushToast(){                       // 대사가 끝난 뒤 미뤄둔 안내문을 보여준다
+  const p=_pendToast; _pendToast=null;
+  if(p) setTimeout(()=>toast(p.t,p.ms), 350);
+}
+function toast(t,ms){
+  if(battle&&battle.on) return;                       // 전투 중에는 문제를 가리지 않게
+  if(typeof DLG!=='undefined' && DLG.on){ _pendToast={t,ms}; return; }   // 대사 중 → 나중에
+  const el=$('toast'); el.textContent=t; el.classList.add('show');
   clearTimeout(toast._t); toast._t=setTimeout(()=>el.classList.remove('show'), ms||1800); }
 
 function update(){
@@ -5181,6 +5705,7 @@ function update(){
     else if(++tapTarget.stall > 8){ tapTarget=null; }
   }
   S.px=Math.max(6,Math.min(W-6,S.px)); S.py=Math.max(PY+6,Math.min(PY+ROWS*TS-6,S.py));
+  try{ trailPush(); }catch(e){}
 
   // exit check (must be inside the arrow gap)
   const def=scr.def;
@@ -5268,6 +5793,7 @@ function gotoScreen(key,dir){
   else if(dir==='L'){ S.px=W-TS-10; S.py=PY+88; }
   else if(dir==='R'){ S.px=TS+10; S.py=PY+88; }
   else { S.px=128; S.py=PY+88; }
+  try{ trailReset(); }catch(e){}
   // never spawn inside an obstacle
   let guard=0;
   while(!canMove(S.px,S.py) && guard++<40){ S.px+= (dir==='R'?6:dir==='L'?-6:0); S.py+= (dir==='D'?6:dir==='U'?-6:0); }
@@ -5309,6 +5835,7 @@ function gotoScreen(key,dir){
         else toast('문이 닫혔다! 이 방의 상대를 물리쳐야 한다.',2400);
       }, 1200);
   }catch(e){}
+  try{ if(devWarpOn()) setTimeout(()=>toast('[테스트] 보라색 소용돌이에서 [확인]을 누르면\n최종보스 방으로 건너갑니다.',3000), 2000); }catch(e){}
   try{ storyEvent('region:'+scr.def.rg); }catch(e){}
   try{ S.place = rgLabel(scr.def); }catch(e){}
   save();
@@ -5319,6 +5846,7 @@ function bossNear(){
   return (Math.abs(b.x-S.px)<30 && Math.abs(b.y-S.py)<34) ? b : null;
 }
 function interact(){
+  try{ if(devWarpNear()){ devWarpToFinal(); return; } }catch(e){}
   const bn=bossNear();
   if(bn){ startBattle(bn,true); return; }
   if(scr.def.shop && Math.abs(S.px-128)<26 && Math.abs(S.py-(PY+64))<30){ openShop(); return; }
@@ -5481,13 +6009,25 @@ function genQMulMC(){
   return {mc:true, text, answer:String(c), choices:choices.map(String)};
 }
 /* --- 캐릭터별 수학 모드 --- */
+/* sub 종류
+   addsub1  : 한 자리 덧셈·뺄셈 (답도 한 자리)
+   catcat   : 받아올림이 있는 덧셈 (답 최대 18) + 한 자리 뺄셈
+   borrow   : 받아내림이 있는 뺄셈 (11~18 − 한 자리) 중심
+   mix2     : 받아올림 덧셈 + 받아내림 뺄셈 혼합                     */
 function genAddSub(sub){
-  const op=pick(['+','-']); let a,b,c;
+  let op=pick(['+','-']); let a,b,c;
+  if(sub==='borrow') op = Math.random()<0.75 ? '-' : '+';
+  if(sub==='mix2')   op = Math.random()<0.5  ? '-' : '+';
   if(op==='+'){
-    if(sub==='catcat'){ a=ri(1,9); b=ri(1,9); }   // 덧셈 답 최대 18(두 자리 가능)
-    else { a=ri(1,8); b=ri(1,9-a); }               // 답 한 자리
+    if(sub==='catcat'||sub==='borrow'||sub==='mix2'){ a=ri(1,9); b=ri(1,9); }  // 답 최대 18
+    else { a=ri(1,8); b=ri(1,9-a); }                                          // 답 한 자리
     c=a+b;
-  } else { a=ri(2,9); b=ri(1,a); c=a-b; }          // 뺄셈 답 한 자리
+  } else if(sub==='borrow'||sub==='mix2'){
+    /* 받아내림: 일의 자리가 모자라 십의 자리에서 빌려온다 (예: 15 − 7 = 8) */
+    c=ri(1,9); b=ri(2,9); a=b+c;
+    if(a<11){ const need=11-a; b=Math.min(9,b+need); a=b+c; }
+    if(a<11){ a=11; b=ri(2,9); c=a-b; }
+  } else { a=ri(2,9); b=ri(1,a); c=a-b; }                                     // 한 자리 뺄셈
   return [NP(a),OP_(op),NP(b),EQ_(),NP(c)];
 }
 function partsToMC(parts){
@@ -5518,15 +6058,56 @@ function genQPow10MC(tier){
   if(ch.indexOf(c)<0) ch[Math.floor(Math.random()*3)]=c;
   return {mc:true, text:a+' × '+m+' = ?', answer:String(c), choices:ch.map(String)};
 }
-function genQ(tier){
+
+/* ==================== [STORYMATH] 이야기 모드 수학 계열성 ====================
+   이야기 순서(1→8)를 그대로 두고, 배우는 내용만 쉬운 것부터 차례로 놓는다.
+   경쟁 모드는 캐릭터별 고유 수학(CHAR_RUN.math)을 그대로 쓴다.
+     1 소년   한 자리 덧셈·뺄셈
+     2 소녀   한 자리 덧셈·뺄셈 (복습)
+     3 캣캣   받아올림이 있는 덧셈
+     4 로봇   받아내림이 있는 뺄셈      ← 기억이 '빠져나가는' 로봇과 어울린다
+     5 유령   덧셈·뺄셈 혼합            ← 앞 이야기를 되짚는 편이라 종합 복습
+     6 무사   곱셈구구                  ← 검을 천 번 휘두르는 수련
+     7 용사   곱셈구구 + 덧셈·뺄셈
+     8 소녀   전 범위 + 10배·100배
+   ========================================================================== */
+const STORY_MATH = {
+  1:'addsub1', 2:'addsub1', 3:'carry', 4:'borrow',
+  5:'addsubmix', 6:'mul', 7:'mulmix', 8:'all'
+};
+const MATH_LABEL = {
+  addsub1:'한 자리 덧셈·뺄셈',
+  carry:'받아올림이 있는 덧셈',
+  borrow:'받아내림이 있는 뺄셈',
+  addsubmix:'덧셈·뺄셈 혼합',
+  mul:'곱셈구구',
+  mulmix:'곱셈구구 + 덧셈·뺄셈',
+  all:'전 범위 + 10배·100배',
+  catcat:'받아올림이 있는 덧셈',
+  pow10:'10배·100배',
+  mixed:'덧셈·뺄셈 + 곱셈구구'
+};
+function mathModeNow(){
+  if(isStory() && STORY_MATH[S.chap]) return STORY_MATH[S.chap];
   const run = S && S.run && CHAR_RUN[S.run];
-  const mode = run ? (run.math||'addsub1') : 'addsub1';
+  return run ? (run.math||'addsub1') : 'addsub1';
+}
+
+function genQ(tier){
+  const mode = mathModeNow();
   const mc = !!(DIFF[S.diff] && DIFF[S.diff].mc);
   if(mode==='mul') return mc ? genQMulMC() : genQMul();
   if(mode==='pow10') return mc ? genQPow10MC(tier) : genQPow10(tier);
-  if(mode==='mixed' && Math.random()<0.34) return mc ? genQMulMC() : genQMul();
-  const sub = (mode==='catcat'||mode==='mixed') ? 'catcat' : 'addsub1';
-  const cap = (mode==='catcat'||mode==='mixed') ? 2 : ((DIFF[S.diff]&&DIFF[S.diff].maxSlots)||2);
+  if(mode==='all'){                                  // 전 범위: 곱셈 · 10배 · 덧뺄
+    const r=Math.random();
+    if(r<0.30) return mc ? genQMulMC() : genQMul();
+    if(r<0.50) return mc ? genQPow10MC(tier) : genQPow10(tier);
+  }
+  if((mode==='mixed'||mode==='mulmix') && Math.random()<0.34) return mc ? genQMulMC() : genQMul();
+  const SUB = {catcat:'catcat', carry:'catcat', borrow:'borrow',
+               addsubmix:'mix2', mixed:'catcat', mulmix:'mix2', all:'mix2'};
+  const sub = SUB[mode] || 'addsub1';
+  const cap = (sub==='addsub1') ? ((DIFF[S.diff]&&DIFF[S.diff].maxSlots)||2) : 2;
   for(let i=0;i<60;i++){
     const parts = genAddSub(sub);
     if(mc) return partsToMC(parts);
@@ -5542,7 +6123,7 @@ function genQ(tier){
 function battleTrackFor(foe, isBoss){
   if(isBoss){
     const id=foe.id||'';
-    if(id==='last'||id==='king'||id==='dracula'||id==='dogking'||id==='scientist') return 'boss_last';
+    if(bossIsFinal(id)) return 'boss_last';
     if(AREA_BOSSES.indexOf(id)>=0) return 'boss';
     return 'boss_castle';              // m1~m4 마왕부하
   }
@@ -5741,6 +6322,7 @@ function pickMC(btn, v){
     sfxPanic();
     setTimeout(()=>correct(), 650);
   } else {
+    battle.lastGiven = v;
     btn.classList.add('wrong'); btn.disabled=true;
     tauntFoe();
     wrong();
@@ -5860,6 +6442,7 @@ function correct(){
 }
 function wrong(timeout){
   if(battle.lock) return;            // 이미 채점된 문항이면 무시
+  try{ wlogAdd(timeout); }catch(e){}  // 어떤 문제를 어떻게 틀렸는지 기록
   setLock(true);
   stopQTimer();
   beep(180,.18);
@@ -5887,7 +6470,7 @@ function winBattle(){
     S.bosses[foe.id]=1; S.gold+=foe.def.gold;
     S.hearts=Math.min(S.maxHearts,S.hearts+2);
     scr.boss=null;
-    if(foe.id==='last'||foe.id==='king'||foe.id==='dracula'||foe.id==='dogking'||foe.id==='scientist'){ battle.on=false; elB.classList.remove('show'); save(); return finishRun(); }
+    if(bossIsFinal(foe.id)){ battle.on=false; elB.classList.remove('show'); save(); return finishRun(); }
     if(!S.keys) S.keys={};
     toast(foe.def.name+' 격파!  골드 +'+foe.def.gold+' · 하트 회복',2400);
     try{ if(isStory()) evLockUntil=Date.now()+1400; }catch(e){}
@@ -5989,6 +6572,45 @@ const TRACKS={
   boss_castle:{bpm:168, wave:'sawtooth', kick:1, hat:1,
     mel:[68,68,71,68, 75,-1,74,-1, 68,68,71,68, 73,-1,71,-1],
     bass:[44,44,44,44, 44,44,44,44, 43,43,43,43, 42,42,42,42]},
+
+  /* ---- 컷신 전용 BGM (엔딩 애니메이션용) ----
+     mel/bass 는 8분음표 16스텝. -1은 쉼표. 숫자는 음 높이(60=도). */
+  cut_fall:{bpm:150, wave:'sawtooth', kick:1, hat:0,          // 무너짐 · 붕괴
+    mel:[69,68,67,66, 65,64,63,62, 61,-1,61,-1, 60,-1,-1,-1],
+    bass:[45,45,45,45, 41,41,41,41, 37,37,37,37, 36,36,-1,-1]},
+  cut_dawn:{bpm:82, wave:'triangle', kick:0, hat:0,           // 새벽 · 안도
+    mel:[72,-1,-1,76, 79,-1,-1,-1, 77,-1,76,-1, 74,-1,-1,-1],
+    bass:[48,-1,-1,-1, 55,-1,-1,-1, 53,-1,-1,-1, 43,-1,-1,-1]},
+  cut_omen:{bpm:76, wave:'triangle', kick:0, hat:0,           // 불길함
+    mel:[61,-1,-1,-1, 67,-1,-1,-1, 61,-1,-1,-1, 66,-1,-1,-1],
+    bass:[37,-1,-1,-1, 37,-1,-1,-1, 36,-1,-1,-1, 36,-1,-1,-1]},
+  cut_sad:{bpm:72, wave:'triangle', kick:0, hat:0,            // 슬픔 · 감옥
+    mel:[69,-1,72,-1, 71,-1,69,-1, 67,-1,69,-1, 65,-1,-1,-1],
+    bass:[45,-1,-1,-1, 40,-1,-1,-1, 41,-1,-1,-1, 43,-1,-1,-1]},
+  cut_peace:{bpm:90, wave:'triangle', kick:0, hat:1,          // 평화 · 낮잠
+    mel:[72,-1,74,76, 74,-1,72,-1, 69,-1,72,-1, 71,-1,-1,-1],
+    bass:[48,-1,55,-1, 50,-1,57,-1, 45,-1,52,-1, 43,-1,-1,-1]},
+  cut_machine:{bpm:128, wave:'square', kick:1, hat:1,         // 기계 · 각성
+    mel:[72,72,-1,72, 75,-1,72,-1, 70,70,-1,70, 72,-1,-1,-1],
+    bass:[36,36,36,36, 36,36,36,36, 34,34,34,34, 34,34,34,34]},
+  cut_book:{bpm:96, wave:'triangle', kick:0, hat:0,           // 책장 · 신비
+    mel:[69,72,76,79, 76,72,69,-1, 71,74,77,81, 77,74,71,-1],
+    bass:[45,-1,-1,-1, 45,-1,-1,-1, 43,-1,-1,-1, 43,-1,-1,-1]},
+  cut_lost:{bpm:66, wave:'triangle', kick:0, hat:0,           // 이름이 없다 · 텅 빔
+    mel:[64,-1,-1,-1, -1,-1,62,-1, 60,-1,-1,-1, -1,-1,-1,-1],
+    bass:[40,-1,-1,-1, -1,-1,-1,-1, 36,-1,-1,-1, -1,-1,-1,-1]},
+  cut_loop:{bpm:108, wave:'sawtooth', kick:1, hat:0,          // 되풀이 · 비장
+    mel:[69,-1,72,74, 76,-1,74,72, 69,-1,72,74, 71,-1,69,-1],
+    bass:[45,45,-1,45, 41,41,-1,41, 43,43,-1,43, 45,45,-1,45]},
+  cut_farewell:{bpm:74, wave:'triangle', kick:0, hat:0,       // 작별
+    mel:[76,-1,74,-1, 72,-1,71,-1, 69,-1,71,-1, 72,-1,-1,-1],
+    bass:[45,-1,-1,-1, 41,-1,-1,-1, 43,-1,-1,-1, 48,-1,-1,-1]},
+  cut_home:{bpm:88, wave:'triangle', kick:0, hat:1,           // 귀향 · 진 엔딩
+    mel:[72,-1,76,79, 77,-1,76,74, 72,-1,74,76, 74,-1,72,-1],
+    bass:[48,-1,55,-1, 53,-1,55,-1, 45,-1,52,-1, 48,-1,-1,-1]},
+  cut_theend:{bpm:60, wave:'triangle', kick:0, hat:0,         // 끝
+    mel:[72,-1,-1,-1, -1,-1,-1,-1, 76,-1,-1,-1, 79,-1,-1,-1],
+    bass:[48,-1,-1,-1, -1,-1,-1,-1, 48,-1,-1,-1, 48,-1,-1,-1]},
   boss_last:{bpm:172, wave:'sawtooth', kick:1, hat:1,
     mel:[69,72,76,81, 80,-1,76,-1, 69,72,75,80, 79,-1,76,-1],
     bass:[45,45,45,45, 44,44,44,44, 43,43,43,43, 41,41,41,41]},
@@ -6316,10 +6938,12 @@ $('menuBtn').onclick=()=>{
     $('menuStat').innerHTML=
       '<b style="color:#c0b0ff">제'+S.chap+'화 · '+(c?c.name:'')+' — 「'+(c?c.sub:'')+'」</b><br>'+
       DIFF[S.diff].label+' · 현재 위치 <b style="color:#f2c14e">'+rgLabel(scr.def)+'</b><br>'+
+      '문제 유형: '+(MATH_LABEL[mathModeNow()]||mathModeNow())+'<br>'+
       '물리친 상대 '+Object.keys(S.bosses).length+'/'+tot+
       ' · 승리 '+S.wins+'회 · 오답 '+S.wrongs+'회'+
       ((S.revives|0)>0?' · 다시 일어섬 '+(S.revives|0)+'회':'')+'<br>'+
       '골드 '+S.gold+' G · 아이템: '+items+'<br>'+
+      (partyList().length ? '함께 걷는 동료: '+partyList().map(w=>dlgNameOf(w)||w).join(', ')+'<br>' : '')+
       '<span style="color:#7a8496">[타이틀로]를 눌러도 여기까지 저장됩니다.</span>';
   } else {
     $('menuStat').innerHTML=
@@ -6605,6 +7229,9 @@ function bossSkin(id){
 }
 /* 상자용 전투 대사 (사람이 말하는 것이 아니므로 톤이 다르다) */
 const STORY_BOSS_LINE = {
+  /* 제4화 — 이 편은 '받아내림이 있는 뺄셈'이다. 대사도 덜어내는 이야기로. */
+  4:{ scientist:{intro:'크하하! 겁 없이 들어온 로봇이군.\n하나씩 덜어내면 무엇이 남는지 보여주마!',
+        taunt:['모자라다! 십의 자리에서 빌려와라!','덜어낸 값이 틀렸다!','다시 세어라!','계산 회로가 고장났나?']} },
   /* 제2화 — 상자는 말을 하지 않는다. 소리와 상태만 적는다. */
   2:{
     _lock:{intro:'', taunt:['철컥.','자물쇠가 꿈쩍도 하지 않는다.','고리가 그대로다.']},
@@ -6644,7 +7271,7 @@ const STORY_BOSS_CUT = {};
    playCutscene([{t:ms, cap:'자막', draw:(g,p,tick)=>{}}], done)
    p = 0~1 (그 장면의 진행도) · 화면을 누르면 건너뛴다
    ======================================================================= */
-function playCutscene(scenes, done){
+function playCutscene(scenes, done, bgm0){
   const ov=document.createElement('div');
   ov.style.cssText='position:fixed;inset:0;z-index:9998;background:#05040a;display:flex;'+
     'align-items:center;justify-content:center;flex-direction:column';
@@ -6660,7 +7287,7 @@ function playCutscene(scenes, done){
   ov.appendChild(cv); ov.appendChild(cap); ov.appendChild(skip);
   document.body.appendChild(ov);
   const g=cv.getContext('2d'); noSmooth(g);
-  try{ stopBGM(); }catch(e){}
+  try{ audioInit(); if(bgm0) setBGM(bgm0); else stopBGM(); }catch(e){}
   const prevPaused=paused; paused=true;
 
   const total=scenes.reduce((a,s)=>a+s.t,0);
@@ -6680,6 +7307,7 @@ function playCutscene(scenes, done){
       if(el < acc+s.t){ cur=s; p=(el-acc)/s.t; break; }
       acc+=s.t;
     }
+    if(cur.bgm){ try{ if(A.cur!==cur.bgm) setBGM(cur.bgm); }catch(e){} }   // 장면이 바뀌면 곡도 바뀐다
     g.fillStyle='#05040a'; g.fillRect(0,0,256,224);
     try{ cur.draw(g,p,tick); }catch(e){}
     /* 장면 시작/끝 페이드 */
@@ -6773,7 +7401,7 @@ function ch2Cutscene(done){
         cutNpc(g,'boss_last',168,196,1.7);
         cutHero(g,'chara_g',82,196,2.2,'R',0,false);
       }},
-    { t:4600, cap:'"아니.\n이긴 것과, 죄를 지은 것은 다른 문제다."',
+    { t:4600, bgm:'cut_omen', cap:'"아니.\n이긴 것과, 죄를 지은 것은 다른 문제다."',
       draw:(g,p,tk)=>{
         cutThrone(g,tk);
         cutNpc(g,'boss_last',168,196,1.7);
@@ -6796,7 +7424,7 @@ function ch2Cutscene(done){
         cutHero(g,'chara_g',124,196+p*30,2.2,'D',0,false);
         g.globalAlpha=1;
       }},
-    { t:3800, cap:'떨어진다.',
+    { t:3800, bgm:'cut_fall', cap:'떨어진다.',
       draw:(g,p,tk)=>{
         g.fillStyle='#07060e'; g.fillRect(0,0,256,224);
         for(let i=0;i<16;i++){                      /* 스쳐 지나가는 돌벽 */
@@ -6824,7 +7452,7 @@ function ch2Cutscene(done){
         g.fillStyle='#141322'; g.fillRect(0,178,256,46);
         cutHero(g,'chara_g',128,200,2.0,'U',0,false);
       }},
-    { t:4200, cap:'마왕성 감옥.\n소녀는 아무것도 가져가지 못했다.',
+    { t:4200, bgm:'cut_sad', cap:'마왕성 감옥.\n소녀는 아무것도 가져가지 못했다.',
       draw:(g,p,tk)=>{
         g.fillStyle='#0b0a12'; g.fillRect(0,0,256,224);
         g.fillStyle='#141322'; g.fillRect(0,150,256,74);
@@ -6843,7 +7471,7 @@ function ch2Cutscene(done){
         cutHero(g,'chara_g',110,170,3,'D',tk,false);
         for(let x=8;x<256;x+=26){ g.fillStyle='rgba(7,6,12,.92)'; g.fillRect(x,0,7,224); }
       }},
-    { t:4200, cap:'그 밤, 노인은 다른 집의 문을 두드렸다.',
+    { t:4200, bgm:'cut_omen', cap:'그 밤, 노인은 다른 집의 문을 두드렸다.',
       draw:(g,p,tk)=>{
         g.fillStyle='#0d0f1e'; g.fillRect(0,0,256,224);
         cutStars(g,50,3);
@@ -6878,7 +7506,7 @@ function ch2Cutscene(done){
         g.fillStyle='rgba(242,193,78,'+(0.35+0.4*Math.sin(p*Math.PI)).toFixed(2)+')';
         g.fillRect(48,111,160,2);
       }}
-  ], done);
+  ], done, 'cut_dawn');
 }
 
 
@@ -6926,7 +7554,7 @@ function ch3Cutscene(done){
         g.restore();
         cutZzz(g,100,132,tk,3); cutZzz(g,182,128,tk+40,3);
       }},
-    { t:4200, cap:'방구석에 굴러다니던 돌멩이가,\n혼자서 빛나기 시작했다.',
+    { t:4200, bgm:'cut_omen', cap:'방구석에 굴러다니던 돌멩이가,\n혼자서 빛나기 시작했다.',
       draw:(g,p,tk)=>{
         cutRoom(g);
         g.save(); g.translate(0,8);
@@ -6947,7 +7575,7 @@ function ch3Cutscene(done){
         g.fillStyle=rg; g.fillRect(0,0,256,224);
         if(p>0.6){ g.fillStyle='rgba(5,4,10,'+((p-0.6)/0.4).toFixed(2)+')'; g.fillRect(0,0,256,224); }
       }},
-    { t:3600, cap:'…그리고 아주 먼 곳에서,\n무언가 눈을 떴다.',
+    { t:3600, bgm:'cut_machine', cap:'…그리고 아주 먼 곳에서,\n무언가 눈을 떴다.',
       draw:(g,p,tk)=>{
         g.fillStyle='#05040a'; g.fillRect(0,0,256,224);
         const on=Math.min(1, Math.max(0,(p-0.25)/0.35));
@@ -6970,7 +7598,7 @@ function ch3Cutscene(done){
         g.fillStyle='rgba(150,240,255,'+(0.30+0.4*Math.sin(p*Math.PI)).toFixed(2)+')';
         g.fillRect(48,111,160,2);
       }}
-  ], done);
+  ], done, 'cut_peace');
 }
 
 
@@ -7040,7 +7668,7 @@ function ch4Cutscene(done){
         rg.addColorStop(1,'rgba(140,210,255,0)');
         g.fillStyle=rg; g.fillRect(0,0,256,224);
       }},
-    { t:4200, cap:'연구소의 벽이 물결처럼 일그러진다.',
+    { t:4200, bgm:'cut_fall', cap:'연구소의 벽이 물결처럼 일그러진다.',
       draw:(g,p,tk)=>{
         cutLab(g);
         cutHero(g,'chara_robot',104,190,2.4,'R',0,false);
@@ -7075,7 +7703,7 @@ function ch4Cutscene(done){
           g.fillRect(0,y,256,2);
         }
       }},
-    { t:3400, cap:'…아주 멀리서 누군가의 목소리가 들렸다.\n"이게 무슨 일이오?!"',
+    { t:3400, bgm:'cut_omen', cap:'…아주 멀리서 누군가의 목소리가 들렸다.\n"이게 무슨 일이오?!"',
       draw:(g,p)=>{
         g.fillStyle='#05040a'; g.fillRect(0,0,256,224);
         g.fillStyle='rgba(150,240,255,'+(0.16*(1-p)).toFixed(2)+')';
@@ -7087,7 +7715,7 @@ function ch4Cutscene(done){
         g.fillStyle='rgba(196,168,255,'+(0.30+0.4*Math.sin(p*Math.PI)).toFixed(2)+')';
         g.fillRect(48,111,160,2);
       }}
-  ], done);
+  ], done, 'cut_machine');
 }
 
 
@@ -7132,7 +7760,7 @@ function bookScene(col, cap, drawFn){
 }
 function playBook(col, title, sub, panels, done){
   playCutscene([{ t:2600, cap:'책을 펼쳤다.', draw:(g,p)=>cutCover(g,col,title,sub,p) }]
-    .concat(panels.map(s=>bookScene(col, s[0], s[1]))), done);
+    .concat(panels.map(s=>bookScene(col, s[0], s[1]))), done, 'cut_book');
 }
 
 /* ── 1권 · 파란 책 (소년) ── */
@@ -7285,7 +7913,7 @@ function ch5Cutscene(done){
       cutHero(g,'chara_ghost',128,184,1.9,'D',tk,false);
       g.fillStyle='#3f6fb8'; g.fillRect(150,148,16,10);
     }),
-    { t:3600, cap:'…이거, 나잖아.',
+    { t:3600, bgm:'cut_lost', cap:'…이거, 나잖아.',
       draw:(g,p,tk)=>{ cutPaper(g); cutClip(g,()=>{
         g.fillStyle='#181428'; g.fillRect(22,22,212,180);
         cutHero(g,'chara_ghost',128,170,3.0,'D',tk,false);
@@ -7311,7 +7939,7 @@ function ch5Cutscene(done){
         cutBuilding(g, 176,150, 20, 66, '#333b4e', '#ffd98a');
         cutHero(g,'chara_musa',128,186,1.9,'D',tk,false);
       }); cutFrame(g,'#414150'); } },
-    { t:4600, cap:'주인 뒤 책장에는\n은색 책과 금색 책이 나란히 꽂혀 있었다.',
+    { t:4600, bgm:'cut_omen', cap:'주인 뒤 책장에는\n은색 책과 금색 책이 나란히 꽂혀 있었다.',
       draw:(g,p,tk)=>{
         g.fillStyle='#1a1220'; g.fillRect(0,0,256,224);
         g.fillStyle='#2a1e16'; g.fillRect(28,58,200,110);
@@ -7332,7 +7960,7 @@ function ch5Cutscene(done){
       draw:(g,p)=>{ g.fillStyle='#05040a'; g.fillRect(0,0,256,224);
         g.fillStyle='rgba(196,168,255,'+(0.30+0.4*Math.sin(p*Math.PI)).toFixed(2)+')';
         g.fillRect(48,111,160,2); } }
-  ], done);
+  ], done, 'cut_book');
 }
 
 
@@ -7407,7 +8035,7 @@ function ch6Cutscene(done){
         cutGem(g, 170, 138, 22, 1);
         cutWave(g, 1+p*5, tk);
       }},
-    { t:4200, cap:'세상이 종이처럼 구겨졌다.',
+    { t:4200, bgm:'cut_fall', cap:'세상이 종이처럼 구겨졌다.',
       draw:(g,p,tk)=>{
         cutStudy(g);
         cutHero(g,'chara_musa',72,196,2.2,'R',0,false);
@@ -7420,14 +8048,14 @@ function ch6Cutscene(done){
         g.fillStyle='rgba(220,200,255,'+(0.14*(1-p)).toFixed(2)+')';
         g.fillRect(0,110,256,3);
       }},
-    { t:3400, cap:'…정적.\n그리고 아주 작게, 책장 넘기는 소리.',
+    { t:3400, bgm:'cut_lost', cap:'…정적.\n그리고 아주 작게, 책장 넘기는 소리.',
       draw:(g,p,tk)=>{
         g.fillStyle='#0b0910'; g.fillRect(0,0,256,224);
         const a=(0.10+0.10*Math.sin(tk/14)).toFixed(2);
         g.fillStyle='rgba(232,223,198,'+a+')';
         g.fillRect(88,92,80,44);
       }},
-    { t:4600, cap:'저택의 책장에서\n은색 책의 자물쇠가 풀렸다.',
+    { t:4600, bgm:'cut_book', cap:'저택의 책장에서\n은색 책의 자물쇠가 풀렸다.',
       draw:(g,p,tk)=>{
         g.fillStyle='#1a1220'; g.fillRect(0,0,256,224);
         g.fillStyle='#2a1e16'; g.fillRect(28,58,200,110);
@@ -7445,7 +8073,7 @@ function ch6Cutscene(done){
         g.fillStyle='rgba(192,200,216,'+(0.30+0.4*Math.sin(p*Math.PI)).toFixed(2)+')';
         g.fillRect(48,111,160,2);
       }}
-  ], done);
+  ], done, 'cut_omen');
 }
 
 
@@ -7484,7 +8112,7 @@ function ch7Cutscene(done){
         cutHero(g,'hero',72,206,2.2,'R',0,false);
         g.fillStyle='rgba(255,244,210,'+(0.04+p*0.14).toFixed(2)+')'; g.fillRect(0,0,256,224);
       }},
-    { t:5000, cap:'두 얼굴이 천천히 겹쳐졌다.',
+    { t:5000, bgm:'cut_lost', cap:'두 얼굴이 천천히 겹쳐졌다.',
       draw:(g,p,tk)=>{
         g.fillStyle='#0e0c1e'; g.fillRect(0,0,256,224);
         const a=Math.min(1,Math.max(0,(p-0.15)/0.7));
@@ -7507,7 +8135,7 @@ function ch7Cutscene(done){
         rg.addColorStop(1,'rgba(255,236,180,0)');
         g.fillStyle=rg; g.fillRect(0,0,256,224);
       }},
-    { t:3800, cap:'"시간 좌표, 안정화 중.\n…돌아갈 수 있다."',
+    { t:3800, bgm:'cut_dawn', cap:'"시간 좌표, 안정화 중.\n…돌아갈 수 있다."',
       draw:(g,p,tk)=>{
         cutStorm(g,tk);
         cutHero(g,'hero',80,206,2.2,'R',0,false);
@@ -7545,7 +8173,7 @@ function ch7Cutscene(done){
         cutGem(g, 128, 150, 12+p*30, .9);
         g.fillStyle='rgba(255,250,225,'+(p*p*0.85).toFixed(2)+')'; g.fillRect(0,0,256,224);
       }},
-    { t:4200, cap:'마을 어귀.\n등이 굽은 노인이 지팡이를 짚고 서 있었다.',
+    { t:4200, bgm:'cut_omen', cap:'마을 어귀.\n등이 굽은 노인이 지팡이를 짚고 서 있었다.',
       draw:(g,p,tk)=>{
         g.fillStyle='#0d0f1e'; g.fillRect(0,0,256,224);
         cutStars(g,50,3);
@@ -7565,7 +8193,7 @@ function ch7Cutscene(done){
       }},
     { t:3000, cap:'',
       draw:(g,p)=>{ g.fillStyle='#05040a'; g.fillRect(0,0,256,224); }},
-    { t:4600, cap:'"…또 똑같잖아.\n이 사람, 몇 번을 이러는 거야."',
+    { t:4600, bgm:'cut_book', cap:'"…또 똑같잖아.\n이 사람, 몇 번을 이러는 거야."',
       draw:(g,p,tk)=>{
         g.fillStyle='#1a1220'; g.fillRect(0,0,256,224);
         g.fillStyle='#2a1e16'; g.fillRect(28,58,200,110);
@@ -7596,7 +8224,7 @@ function ch7Cutscene(done){
         g.fillStyle='rgba(224,180,58,'+(0.30+0.45*Math.sin(p*Math.PI)).toFixed(2)+')';
         g.fillRect(48,111,160,2);
       }}
-  ], done);
+  ], done, 'cut_loop');
 }
 
 
@@ -7661,7 +8289,7 @@ function ch8Cutscene(done){
         cutParty(g,tk,1);
         g.fillStyle='rgba(255,246,220,'+(0.04+p*0.10).toFixed(2)+')'; g.fillRect(0,0,256,224);
       }},
-    { t:4200, cap:'"질문한다. 나는 사라지는가."',
+    { t:4200, bgm:'cut_lost', cap:'"질문한다. 나는 사라지는가."',
       draw:(g,p,tk)=>{
         cutStorm(g,tk);
         cutHero(g,'chara_robot',150,196,2.8,'L',0,false);
@@ -7707,7 +8335,7 @@ function ch8Cutscene(done){
         cutHero(g,'heroine',128,200,2.8,'U',0,false);
         cutGem(g, 128, 120-p*10, 10+p*26, .6+p*.4);
       }},
-    { t:5400, cap:'세상이 뒤로 감기기 시작했다.',
+    { t:5400, bgm:'cut_fall', cap:'세상이 뒤로 감기기 시작했다.',
       draw:(g,p,tk)=>{
         g.fillStyle='#0e0c1e'; g.fillRect(0,0,256,224);
         /* 되감기 몽타주: 성 → 마을 → 사람들 */
@@ -7721,7 +8349,7 @@ function ch8Cutscene(done){
       }},
     { t:2400, cap:'',
       draw:(g,p)=>{ g.fillStyle='#fffaf0'; g.fillRect(0,0,256,224); }},
-    { t:5400, cap:'"…우리 어디서 만난 적 있지?"',
+    { t:5400, bgm:'cut_home', cap:'"…우리 어디서 만난 적 있지?"',
       draw:(g,p,tk)=>{ cutWellScene(g,tk); }},
     { t:4600, cap:'"무슨 소리야. 맨날 보잖아."',
       draw:(g,p,tk)=>{ cutWellScene(g,tk); }},
@@ -7739,7 +8367,7 @@ function ch8Cutscene(done){
         g.drawImage(_wcv, 0,0,256,224, x,y,ww,hh);
         if(t>0.5) cutFrame(g,'#e0b43a');
       }},
-    { t:6000, cap:'"…소년과 소녀는 마을에서,\n오래오래 행복하게 함께 놀았습니다."',
+    { t:6000, bgm:'cut_book', cap:'"…소년과 소녀는 마을에서,\n오래오래 행복하게 함께 놀았습니다."',
       draw:(g,p,tk)=>{
         g.fillStyle='#1a1220'; g.fillRect(0,0,256,224);
         g.fillStyle='#2a1e16'; g.fillRect(20,40,216,120);
@@ -7786,7 +8414,7 @@ function ch8Cutscene(done){
         g.beginPath(); g.ellipse(168,204,34,7,0,0,7); g.fill();
         cutHero(g,'chara_ghost',128,202,2.8,'D',tk,false);
       }},
-    { t:6000, cap:'',
+    { t:6000, bgm:'cut_theend', cap:'',
       draw:(g,p)=>{
         g.fillStyle='#05040a'; g.fillRect(0,0,256,224);
         const a=Math.min(1,p*2.2);
@@ -7797,7 +8425,7 @@ function ch8Cutscene(done){
         g.fillStyle='rgba(224,180,58,'+(a*0.7).toFixed(2)+')';
         g.fillRect(74,128,108,2);
       }}
-  ], done);
+  ], done, 'cut_farewell');
 }
 
 /* ==================== [CUT] 엔딩 컷신 (소년/소녀 런) ==================== */
@@ -7816,7 +8444,8 @@ function endingCutscene(done){
   ov.appendChild(cv); ov.appendChild(cap); ov.appendChild(skip);
   document.body.appendChild(ov);
   const g=cv.getContext('2d'); noSmooth(g);
-  try{ stopBGM(); }catch(e){}
+  try{ audioInit(); setBGM('cut_fall'); }catch(e){}
+  let bgmPhase=0;
 
   const T0=performance.now(), TOTAL=13000;
   let raf=0, finished=false;
@@ -7892,6 +8521,7 @@ function endingCutscene(done){
         const x=150+shake+(rnd(i+3)-0.5)*80, y=110+t2*70;
         g.fillStyle='#2c2440'; } }
     } else if(el<9200){                 // 3) 새벽, 둘이 지켜본다
+      if(bgmPhase<1){ bgmPhase=1; try{ setBGM('cut_dawn'); }catch(e){} }
       const q=(el-6200)/3000;
       dawn=q; dust=Math.max(0,1-q*1.6); fall=1; hero=Math.min(1,q*2);
       txt=q<0.5?'…끝났어.':'"이제, 집에 가자."';
@@ -8054,9 +8684,21 @@ function insNear(def){
   }
   return null;
 }
+/* ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+   [임시 · 테스트용] 모든 이야기를 열어둔다.
+   교실에 배포하기 전에 아래 값을 반드시 false 로 되돌리세요.
+   (주소 뒤에 #lockstory 를 붙이면 이 값과 상관없이 잠깁니다)
+   ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ */
+const DEV_UNLOCK_ALL = true;
+function devUnlockOn(){
+  if(!DEV_UNLOCK_ALL) return false;
+  try{ if(location.hash && location.hash.indexOf('lockstory')>=0) return false; }catch(e){}
+  return true;
+}
 function storyProg(){ try{ return JSON.parse(localStorage.getItem('mz_story'))||{open:1,done:{}}; }catch(e){ return {open:1,done:{}}; } }
 function saveStoryProg(p){ try{ localStorage.setItem('mz_story', JSON.stringify(p)); }catch(e){} }
-function storyOpen(){ const p=storyProg(); return Math.max(1, Math.min(CHAPTERS.length, p.open|0)); }
+function storyOpen(){ if(devUnlockOn()) return CHAPTERS.length;
+  const p=storyProg(); return Math.max(1, Math.min(CHAPTERS.length, p.open|0)); }
 function storyDone(n){ return !!(storyProg().done||{})[n]; }
 function markStoryDone(n){
   const p=storyProg(); p.done=p.done||{}; p.done[n]=1;
@@ -8115,6 +8757,7 @@ let pendChap=0;           // 선택 중인 챕터 번호
 
 function buildShelf(){
   const sh=$('shelf'); if(!sh) return;
+  const dw=$('devWarn'); if(dw) dw.style.display = devUnlockOn()?'':'none';
   sh.innerHTML='';
   const open=storyOpen();
   const rows=[CHAPTERS.slice(0,4), CHAPTERS.slice(4,8)];
@@ -8137,6 +8780,8 @@ function buildShelf(){
         pendChap=c.n; buildShelf();
         const rs2=storyResume(c.n);
         let info='<b>제'+c.n+'화 · '+c.name+' — 「'+c.sub+'」</b><br>'+c.desc;
+        const mk=STORY_MATH[c.n];
+        if(mk) info += '<br><span style="color:#8ad67a">📐 배우는 것: '+(MATH_LABEL[mk]||mk)+'</span>';
         if(rs2){
           info += '<br><span style="color:#8ad6f2">📖 읽던 중'+
                   (rs2.place?' — '+rs2.place:'')+
@@ -8464,7 +9109,8 @@ function countdownThen(cb){
 
 /* 타이틀을 닫고 플레이 모드로 전환 (레이아웃·오디오 포함) */
 function enterPlayMode(){
-  paused=false; ended=false;   // 새 판/재개 진입 시 항상 일시정지 해제 (직전 판 ending에서 남은 paused 방지)
+  paused=false; ended=false;
+  try{ trailReset(); }catch(e){}   // 새 판/재개 진입 시 항상 일시정지 해제 (직전 판 ending에서 남은 paused 방지)
   setTimeout(()=>{ try{ if(!battle.on && !ended) storyEvent('start'); }catch(e){} }, 650);   // 시작 스토리
   $('title').classList.remove('show');
   document.body.classList.add('playing');
@@ -8579,7 +9225,7 @@ function loop(t){
     cx.setTransform(RS,0,0,RS,0,0); noSmooth(cx);   // 논리 256좌표를 512백버퍼에 2배로 렌더
     cx.fillStyle='#000'; cx.fillRect(0,0,W,H);
     try{ actorUpdate(); }catch(e){}
-    drawTiles(); drawArrows(); drawTapMarker(); drawEntities(); actorDraw(); drawPlayer(); drawHUD(); drawBottom();
+    drawTiles(); drawArrows(); drawTapMarker(); try{ devWarpDraw(); }catch(e){} drawEntities(); actorDraw(); drawParty(); drawPlayer(); drawHUD(); drawBottom();
     drawMapTo(mcx,MC,false);
   }
   if($('shop').classList.contains('show')){ drawAvatarPreview();
@@ -8817,6 +9463,7 @@ loadImages(()=>{
   fit();
   $('btnCont').disabled = !anySlotUsed();
   showTitleStep('mode');
+  try{ if(location.hash && /(^|#)log/.test(location.hash)) setTimeout(openWrongLog, 300); }catch(e){}
   requestAnimationFrame(loop);
 });
 </script>
