@@ -1054,32 +1054,67 @@ function genRobot(seed, D, run){
   MAPSTART=K(HC,3); AREA_BOSSES=bossIds.slice();
   return M;
 }
+/* 저택(유령) — 네 구역을 2x2 로 배치한다.
+   구역 하나는 2~3칸짜리 사각형(4~9방)이고, 구역 안은 사방으로 트여 있다.
+   구역끼리는 문 하나씩만 이어져 고리(좌상-우상-우하-좌하) 모양이 된다.
+   입구는 아래 가운데, 주인의 방은 위 가운데. 총 방 수는 예전(일자 4줄)과 비슷하다. */
 function genMansion(seed, D, run){
   const M={}, R=rng((seed>>>0)||1);
   const shuf=a=>{a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(R()*(i+1));const t=a[i];a[i]=a[j];a[j]=t;} return a;};
   const K=(c,r)=>c+','+r;
+  const ri=n=>Math.floor(R()*n);
   const themes=shuf(['hm_entry','hm_hall','hm_lib','hm_crypt']);
   const bossIds=['gv1','gv2','gv3','gv4'];
-  for(let r=1;r<=4;r++){ M[K(1,r)]={ex:{}, rg:'hm_entry'}; }
-  for(let r=1;r<4;r++){ M[K(1,r)].ex.D=K(1,r+1); M[K(1,r+1)].ex.U=K(1,r); }
-  M[K(1,0)]={ex:{}, rg:'hm_master', boss:'dracula'};
-  M[K(1,1)].ex.U=K(1,0); M[K(1,0)].ex.D=K(1,1);
-  M[K(1,1)].gate={U:'bridge'};          // 4 중간보스 다 잡아야 주인의 방 개방
-  for(let i=0;i<4;i++){
-    const row=1+i, len=4+Math.floor(R()*3);   // 4~6방
-    let prev=K(1,row);
-    for(let c=2;c<2+len;c++){
-      const key=K(c,row);
-      M[key]={ex:{}, rg:themes[i]};
-      M[prev].ex.R=key; M[key].ex.L=prev; prev=key;
-    }
-    M[prev].boss=bossIds[i];             // 섹션 끝방 = 중간보스
-  }
-  M[K(0,3)]={ex:{}, rg:'shop', shop:1};              /* 일반 상점 */
-  M[K(1,3)].ex.L=K(0,3); M[K(0,3)].ex.R=K(1,3);
-  M[K(0,1)]={ex:{}, rg:'shop', shop:1};              /* 주인의 방 직전 상점 */
-  M[K(1,1)].ex.L=K(0,1); M[K(0,1)].ex.R=K(1,1);
-  M[K(1,2)].start=1; MAPSTART=K(1,2); AREA_BOSSES=bossIds.slice();
+  const link=(a,b,dir)=>{ const opp={L:'R',R:'L',U:'D',D:'U'}[dir];
+    M[a].ex[dir]=b; M[b].ex[opp]=a; };
+
+  /* 가로 2변·세로 2변에 3칸 둘, 2칸 둘을 섞는다 → 전체 24~25방으로 일정하고,
+     구역 모양은 2x2 · 2x3 · 3x2 · 3x3 으로 매번 달라진다. */
+  const dm=shuf([3,3,2,2]);
+  const WL=dm[0], WR=dm[1], HT=dm[2], HB=dm[3];
+  const W=WL+WR, H=HT+HB;
+
+  const zones=[
+    {c0:1,    r0:1,    w:WL, h:HT, bc:1, br:1},   // 좌상
+    {c0:WL+1, r0:1,    w:WR, h:HT, bc:W, br:1},   // 우상
+    {c0:1,    r0:HT+1, w:WL, h:HB, bc:1, br:H},   // 좌하
+    {c0:WL+1, r0:HT+1, w:WR, h:HB, bc:W, br:H}    // 우하
+  ];
+  zones.forEach((z,i)=>{
+    for(let r=z.r0;r<z.r0+z.h;r++)
+      for(let c=z.c0;c<z.c0+z.w;c++) M[K(c,r)]={ex:{}, rg:themes[i]};
+    for(let r=z.r0;r<z.r0+z.h;r++)          // 구역 안은 격자로 다 통한다
+      for(let c=z.c0;c<z.c0+z.w;c++){
+        if(c+1<z.c0+z.w) link(K(c,r),K(c+1,r),'R');
+        if(r+1<z.r0+z.h) link(K(c,r),K(c,r+1),'D');
+      }
+    M[K(z.bc,z.br)].boss=bossIds[i];        // 바깥쪽 모서리 = 중간보스
+  });
+
+  /* 구역과 구역 사이는 문 하나씩 (고리 모양).
+     좌표는 반드시 먼저 정해 둔다 — 양쪽에서 따로 뽑으면 문이 어긋난다. */
+  const rAB=1+ri(HT), rCD=HT+1+ri(HB), cAC=1+ri(WL), cBD=WL+1+ri(WR);
+  link(K(WL,rAB),  K(WL+1,rAB),  'R');   // 좌상 ↔ 우상
+  link(K(WL,rCD),  K(WL+1,rCD),  'R');   // 좌하 ↔ 우하
+  link(K(cAC,HT),  K(cAC,HT+1),  'D');   // 좌상 ↔ 좌하
+  link(K(cBD,HT),  K(cBD,HT+1),  'D');   // 우상 ↔ 우하
+
+  /* 입구(시작) — 아래 가운데 */
+  M[K(WL,H+1)]={ex:{}, rg:'hm_entry', start:1};
+  link(K(WL,H+1), K(WL,H), 'U');
+
+  /* 주인의 방 — 위 가운데. 중간보스 4을 다 잡아야 열린다 */
+  M[K(WL,0)]={ex:{}, rg:'hm_master', boss:'dracula'};
+  link(K(WL,1), K(WL,0), 'U');
+  M[K(WL,1)].gate={U:'bridge'};
+
+  /* 상점 2곳 — 바깥쪽에 붙인다 */
+  M[K(0,HT)]={ex:{}, rg:'shop', shop:1};
+  link(K(0,HT), K(1,HT), 'R');
+  M[K(W+1,HT+1)]={ex:{}, rg:'shop', shop:1};
+  link(K(W+1,HT+1), K(W,HT+1), 'L');
+
+  MAPSTART=K(WL,H+1); AREA_BOSSES=bossIds.slice();
   return M;
 }
 
@@ -4113,7 +4148,10 @@ function drawHeart(x,y,on){
 
 /* -------- [DRAW] 지도 (미니맵 · 전체지도) -------- */
 const MAPCOL={field:'#4e8f42',ice:'#6fc4ea',desert:'#e0b45e',grass:'#7fc95a',
-  rock:'#8e8a96',castle:'#6b4a8f',shop:'#c9962e',bridge:'#9a7648'};
+  rock:'#8e8a96',castle:'#6b4a8f',shop:'#c9962e',bridge:'#9a7648',
+  /* 저택(유령) — 네 구역을 지도에서 구분해 준다 */
+  hm_entry:'#5a6a8a', hm_hall:'#5f8f7a', hm_lib:'#a8813f',
+  hm_crypt:'#7a7f96', hm_master:'#8a5ac0'};
 const BOSSLABEL={ice:'얼음',desert:'사막',forest:'수풀',rock:'바위',
   m1:'부하1',m2:'부하2',m3:'부하3',m4:'부하4',last:'마왕',
   vb1:'고양이',vb2:'토끼',vb3:'거북이',vb4:'햄스터',
@@ -8551,6 +8589,216 @@ function endingCutscene(done){
   }
   raf=requestAnimationFrame(frame);
 }
+/* ==================== [CUT3] 경쟁 모드 캐릭터별 엔딩 ====================
+   소년·소녀는 기존 endingCutscene()을 그대로 쓰고,
+   그 외 캐릭터는 아래에서 각자의 마무리를 재생한다.
+   재생했으면 true, 해당 엔딩이 없으면 false 를 돌려준다.
+   ======================================================================= */
+function cutMansionRoom(g){               /* 저택 서재 */
+  g.fillStyle='#141018'; g.fillRect(0,0,256,150);
+  g.fillStyle='#221a26'; g.fillRect(0,150,256,74);
+  for(let x=0;x<256;x+=36){ g.fillStyle='#1b141f'; g.fillRect(x,150,18,74); }
+  g.fillStyle='#3a2a1e'; g.fillRect(12,24,72,76);          // 책장
+  for(let r=0;r<4;r++){
+    for(let i=0;i<9;i++){
+      g.fillStyle=['#7a3a3a','#3a5a7a','#6a5a2a','#4a3a5a'][(i+r)%4];
+      g.fillRect(16+i*7, 28+r*18, 5, 14);
+    }
+  }
+  g.fillStyle='#2a2030'; g.fillRect(178,20,56,64);         // 창
+  g.fillStyle='#0d0a12'; g.fillRect(182,24,48,56);
+}
+function cutDawnSky(g, p){                /* 새벽 하늘 */
+  const s=g.createLinearGradient(0,0,0,150);
+  s.addColorStop(0, p<0.5?'#1a1430':'#3a2a50');
+  s.addColorStop(0.6, p<0.5?'#4a2a40':'#e08a5a');
+  s.addColorStop(1, p<0.5?'#2a1c38':'#ffc98a');
+  g.fillStyle=s; g.fillRect(0,0,256,150);
+  g.fillStyle='#1d1730'; g.fillRect(0,150,256,74);
+  if(p>0.55){ const sy=150-(p-0.55)*70;
+    g.fillStyle='rgba(255,220,150,0.9)';
+    g.beginPath(); g.arc(198, sy, 13, 0, 7); g.fill(); }
+}
+function cutTheEnd(g, p, col){            /* 마지막 한 줄 */
+  g.fillStyle='#05040a'; g.fillRect(0,0,256,224);
+  g.fillStyle=(col||'rgba(242,193,78,')+(0.30+0.45*Math.sin(p*Math.PI)).toFixed(2)+')';
+  g.fillRect(48,111,160,2);
+}
+function runEndingCutscene(done){
+  const ck = S.run || S.char;               // catcat/robot/musa/ghost/hero/heroine
+  const me = S.char;                        // 스프라이트 키
+  let scenes=null, bgm0='cut_peace';
+
+  if(ck==='catcat'){                        /* 캣캣 — 강아지 대왕과 화해 */
+    bgm0='cut_peace';
+    scenes=[
+      { t:3600, cap:'"져, 졌다 멍…"\n강아지 대왕이 폭삭 주저앉았다.',
+        draw:(g,p,tk)=>{ cutRoom(g);
+          cutHero(g,me,84,172,2,'R',tk,false);
+          g.save(); g.translate(0, 6+p*4); cutNpc(g,'dogking',170,172,2); g.restore(); }},
+      { t:3800, cap:'그런데 캣캣은 싸우러 온 게 아니었다.\n그냥 밥 때가 됐을 뿐이다.',
+        draw:(g,p,tk)=>{ cutRoom(g);
+          cutHero(g,me,84+p*22,172,2,'R',tk,p<0.9);
+          g.save(); g.translate(0,10); cutNpc(g,'dogking',170,172,2); g.restore(); }},
+      { t:4200, bgm:'cut_home', cap:'"같이 먹자냥."\n"…머, 멍."',
+        draw:(g,p,tk)=>{ cutRoom(g);
+          cutHero(g,me,106,172,2,'R',tk,false);
+          g.save(); g.translate(0,10); cutNpc(g,'dogking',170,172,2); g.restore();
+          g.fillStyle='#7bd66a';
+          for(let i=0;i<9;i++) g.fillRect(126+i*4, 168-((i*5)%9), 3, 6); }},
+      { t:3400, cap:'강아지성에 처음으로\n조용한 저녁이 왔다.',
+        draw:(g,p,tk)=>{ cutRoom(g);
+          g.fillStyle='rgba(255,180,110,'+(0.10+p*0.28).toFixed(2)+')'; g.fillRect(0,0,256,224);
+          cutHero(g,me,106,172,2,'R',0,false);
+          g.save(); g.translate(0,10); cutNpc(g,'dogking',170,172,2); g.restore();
+          cutZzz(g,120,132,tk,3); }},
+      { t:2600, bgm:'cut_theend', cap:'— 캣캣의 이야기 끝 —',
+        draw:(g,p)=>cutTheEnd(g,p) }
+    ];
+  }
+  else if(ck==='robot'){                    /* 로봇 — 연구소 밖으로 */
+    bgm0='cut_machine';
+    scenes=[
+      { t:3600, cap:'"내, 내 계산이 틀렸다고?!"',
+        draw:(g,p,tk)=>{ cutLab(g);
+          cutHero(g,me,84,172,2,'R',0,false);
+          g.save(); g.translate(0, 4+p*8); cutNpc(g,'scientist',170,172,2); g.restore(); }},
+      { t:3800, cap:'연구소의 불이\n하나씩 꺼져 갔다.',
+        draw:(g,p,tk)=>{ cutLab(g);
+          g.fillStyle='rgba(5,4,10,'+(p*0.55).toFixed(2)+')'; g.fillRect(0,0,256,224);
+          cutHero(g,me,84,172,2,'R',0,false); }},
+      { t:4200, bgm:'cut_dawn', cap:'로봇은 태어나서 처음으로\n연구소 밖으로 걸어 나갔다.',
+        draw:(g,p,tk)=>{ cutLab(g);
+          g.fillStyle='rgba(5,4,10,0.55)'; g.fillRect(0,0,256,224);
+          const w=40+p*60;                                   // 열린 문에서 새어드는 빛
+          g.fillStyle='rgba(255,236,190,'+(0.20+p*0.5).toFixed(2)+')';
+          g.fillRect(256-w, 92, w, 76);
+          cutHero(g,me,84+p*110,172,2,'R',tk,true); }},
+      { t:3800, cap:'"…계산으로는\n알 수 없는 것도 있구나."',
+        draw:(g,p,tk)=>{ cutDawnSky(g,p); cutStars(g,26,3);
+          cutHero(g,me,128,196,2,'U',tk,false); }},
+      { t:2600, bgm:'cut_theend', cap:'— 로봇의 이야기 끝 —',
+        draw:(g,p)=>cutTheEnd(g,p,'rgba(150,240,255,') }
+    ];
+  }
+  else if(ck==='musa'){                     /* 무사 — 제 시대로 돌아가다 */
+    bgm0='cut_farewell';
+    scenes=[
+      { t:3600, cap:'조선의 왕이 붓을 내려놓았다.',
+        draw:(g,p,tk)=>{ cutStudy(g);
+          cutHero(g,me,84,172,2,'R',0,false);
+          g.save(); g.translate(0, 4+p*6); cutNpc(g,'king',170,172,2); g.restore(); }},
+      { t:3800, cap:'"…그대의 셈이 옳았다."',
+        draw:(g,p,tk)=>{ cutStudy(g);
+          cutHero(g,me,84,172,2,'R',0,false);
+          g.globalAlpha=Math.max(0,1-p); g.save(); g.translate(0,10);
+          cutNpc(g,'king',170,172,2); g.restore(); g.globalAlpha=1; }},
+      { t:4200, bgm:'cut_home', cap:'무사는 시간을 건너\n제 마을로 돌아갔다.',
+        draw:(g,p,tk)=>{
+          const s=g.createLinearGradient(0,0,0,150);
+          s.addColorStop(0,'#7ea8c8'); s.addColorStop(1,'#dfe8d8');
+          g.fillStyle=s; g.fillRect(0,0,256,150);
+          g.fillStyle='#4a5a3a'; g.fillRect(0,150,256,74);
+          cutHanok(g, 176, 152, 2);
+          cutHero(g,me,30+p*104,182,2,'R',tk,true); }},
+      { t:3400, cap:'기와 위로 해가 진다.',
+        draw:(g,p,tk)=>{ cutDawnSky(g,1-p*0.5);
+          g.fillStyle='#3a3a2a'; g.fillRect(0,150,256,74);
+          cutHanok(g, 176, 152, 2);
+          cutHero(g,me,134,182,2,'R',0,false); }},
+      { t:2600, bgm:'cut_theend', cap:'— 무사의 이야기 끝 —',
+        draw:(g,p)=>cutTheEnd(g,p) }
+    ];
+  }
+  else if(ck==='ghost'){                    /* 유령 — 끝나지 않았던 이야기 */
+    bgm0='cut_book';
+    scenes=[
+      { t:3600, cap:'"크아악… 봉인이…!"',
+        draw:(g,p,tk)=>{ cutMansionRoom(g);
+          cutHero(g,me,84,172,2,'R',tk,false);
+          g.globalAlpha=Math.max(0.15,1-p*0.8); g.save(); g.translate(0,4+p*8);
+          cutNpc(g,'dracula',170,172,2); g.restore(); g.globalAlpha=1; }},
+      { t:3800, cap:'책장에서 책 한 권이\n저절로 빠져나왔다.',
+        draw:(g,p,tk)=>{ cutMansionRoom(g);
+          cutHero(g,me,84,172,2,'L',tk,false);
+          g.fillStyle='#c8a24a'; g.fillRect(48-p*10, 64+p*70, 6, 16); }},
+      { t:4200, bgm:'cut_lost', cap:'표지에는\n유령의 이름이 적혀 있었다.',
+        draw:(g,p,tk)=>{ cutMansionRoom(g);
+          g.fillStyle='rgba(5,4,10,0.5)'; g.fillRect(0,0,256,224);
+          const w=64, h=84, x=128-w/2, y=112-h/2;
+          g.fillStyle='#c8a24a'; g.fillRect(x,y,w,h);
+          g.fillStyle='#8a6a2a'; g.fillRect(x+4,y+4,w-8,h-8);
+          g.fillStyle='rgba(255,248,220,'+(0.3+0.6*p).toFixed(2)+')';
+          g.fillRect(x+14, y+30, w-28, 3); g.fillRect(x+20, y+40, w-40, 3);
+          cutGem(g, 128, 112, 10+p*20, 0.20+p*0.35); }},
+      { t:4000, bgm:'cut_dawn', cap:'"아… 내 이야기,\n이제야 끝났네."',
+        draw:(g,p,tk)=>{ cutMansionRoom(g);
+          g.fillStyle='rgba(255,236,190,'+(p*0.55).toFixed(2)+')'; g.fillRect(182,24,48,56);
+          g.fillStyle='rgba(255,236,190,'+(p*0.30).toFixed(2)+')'; g.fillRect(0,0,256,224);
+          g.globalAlpha=Math.max(0,1-p*0.95);
+          cutHero(g,me,120,172,2,'D',tk,false); g.globalAlpha=1; }},
+      { t:2600, bgm:'cut_theend', cap:'— 유령의 이야기 끝 —',
+        draw:(g,p)=>cutTheEnd(g,p,'rgba(200,230,255,') }
+    ];
+  }
+  else if(ck==='hero'){                     /* 용사 — 긴 밤의 끝 */
+    bgm0='cut_loop';
+    scenes=[
+      { t:3600, cap:'마왕이 무너져 내린다.',
+        draw:(g,p,tk)=>{ cutThrone(g,tk);
+          cutHero(g,me,84,172,2,'R',0,false);
+          g.globalAlpha=Math.max(0,1-p*0.9); g.save(); g.translate(0,p*14);
+          cutNpc(g,'boss_last',172,172,2); g.restore(); g.globalAlpha=1; }},
+      { t:3600, bgm:'cut_fall', cap:'마왕성이 흔들리기 시작했다.',
+        draw:(g,p,tk)=>{ g.save();
+          g.translate(Math.sin(tk*0.9)*p*4, Math.cos(tk*1.3)*p*3);
+          cutThrone(g,tk); cutHero(g,me,84,172,2,'R',tk,true); g.restore();
+          g.fillStyle='rgba(90,70,60,'+(p*0.35).toFixed(2)+')'; g.fillRect(0,0,256,224); }},
+      { t:4200, bgm:'cut_dawn', cap:'용사는 무너지는 성을 등지고\n밖으로 걸어 나왔다.',
+        draw:(g,p,tk)=>{ cutDawnSky(g,p*0.5);
+          cutCastle(g, 208, 152, 2, '#3a2f4a');
+          cutHero(g,me,20+p*96,186,2,'R',tk,true); }},
+      { t:3800, cap:'긴 밤이 끝났다.',
+        draw:(g,p,tk)=>{ cutDawnSky(g,0.55+p*0.45);
+          cutCastle(g, 208, 152, 2, '#3a2f4a');
+          cutHero(g,me,116,186,2,'R',0,false); }},
+      { t:2600, bgm:'cut_theend', cap:'— 용사의 이야기 끝 —',
+        draw:(g,p)=>cutTheEnd(g,p) }
+    ];
+  }
+  else if(ck==='heroine'){                  /* 소녀 — 모두의 자리로 (최종) */
+    bgm0='cut_home';
+    scenes=[
+      { t:3600, cap:'마지막 마왕이\n조용히 사라졌다.',
+        draw:(g,p,tk)=>{ cutThrone(g,tk);
+          cutHero(g,me,88,172,2,'R',0,false);
+          g.globalAlpha=Math.max(0,1-p); g.save(); g.translate(0,p*10);
+          cutNpc(g,'boss_last',172,172,2); g.restore(); g.globalAlpha=1; }},
+      { t:4000, cap:'소녀는 마을 우물가로 돌아왔다.',
+        draw:(g,p,tk)=>{ cutWellScene(g,tk);
+          cutHero(g,me,40+p*84,196,2,'R',tk,true); }},
+      { t:4400, cap:'혼자가 아니었다.\n모두가 기다리고 있었다.',
+        draw:(g,p,tk)=>{ cutWellScene(g,tk);
+          cutParty(g, tk, Math.min(1,p*1.6));
+          cutHero(g,me,124,196,2,'D',tk,false); }},
+      { t:4000, bgm:'cut_theend', cap:'"…다녀왔어."',
+        draw:(g,p,tk)=>{ cutWellScene(g,tk);
+          cutParty(g, tk, 1);
+          cutHero(g,me,124,196,2,'D',tk,false);
+          g.fillStyle='rgba(255,240,200,'+(p*0.40).toFixed(2)+')'; g.fillRect(0,0,256,224); }},
+      { t:3200, cap:'— 모든 이야기 끝 —',
+        draw:(g,p)=>{ g.fillStyle='#05040a'; g.fillRect(0,0,256,224);
+          const a=(0.35+0.5*Math.sin(p*Math.PI)).toFixed(2);
+          g.fillStyle='rgba(242,193,78,'+a+')';
+          g.fillRect(40,105,176,2); g.fillRect(40,117,176,2); }}
+    ];
+  }
+
+  if(!scenes) return false;
+  playCutscene(scenes, done, bgm0);
+  return true;
+}
+
 function finishRun(){
   if(isStory()){
     if(S.chap===2){ ch2Cutscene(()=>ending()); return; }      // 붙잡힌 채 끝난다
@@ -8564,7 +8812,9 @@ function finishRun(){
     ending(); return;
   }
   const boyRun = !S.run && (S.char==='chara_b' || S.char==='chara_g');
-  if(boyRun) endingCutscene(()=>ending()); else ending();
+  if(boyRun){ endingCutscene(()=>ending()); return; }
+  try{ if(runEndingCutscene(()=>ending())) return; }catch(e){ console.warn('엔딩 컷신 오류', e); }
+  ending();
 }
 
 function ending(){
@@ -8730,10 +8980,22 @@ const CHAR_SLOTS=[
   {key:'chara_robot', run:'robot', name:'로봇'},
   {key:'chara_musa', run:'musa', name:'무사'},
   {key:'chara_ghost', run:'ghost', name:'유령'},
-  {key:'hero', name:'용사'},
-  {key:'heroine', name:'소녀'}
+  {key:'hero', name:'용사', unlock:'hero',
+    unlockMsg:'모든 기본 캐릭터로 고급 난이도를 클리어하면 공개됩니다.'},
+  {key:'heroine', name:'소녀', unlock:'heroine',
+    unlockMsg:'용사까지 포함해 모두 고급 난이도를 클리어하면 공개됩니다.'}
 ];
-function isUnlocked(u){ return true; }
+/* 기본 6인(히든 제외). 이들의 클리어 기록이 해금 판정의 기준이 된다. */
+const BASE_CHARS=['chara_b','chara_g','catcat','robot','musa','ghost'];
+/* 히든 해금 조건
+   · hero(용사)     : 기본 6인을 모두 고급 클리어
+   · heroine(소녀)  : 기본 6인 + 용사까지, 즉 7인을 모두 고급 클리어(최종 히든) */
+function isUnlocked(u){
+  if(!u) return true;
+  if(u==='hero')     return BASE_CHARS.every(ck=>clearOf(ck).n);
+  if(u==='heroine')  return BASE_CHARS.every(ck=>clearOf(ck).n) && clearOf('hero').n;
+  return true;
+}
 function clearRec(){ try{ return JSON.parse(localStorage.getItem('mz_clear'))||{}; }catch(e){ return {}; } }
 function setClearRec(ck,diff){ try{ const r=clearRec(); r[ck]=r[ck]||{}; r[ck][diff]=1; localStorage.setItem('mz_clear',JSON.stringify(r)); }catch(e){} }
 function clearOf(ck){ const r=clearRec()[ck]||{}; return {e:!!r.easy, n:!!r.normal}; }
@@ -8888,14 +9150,11 @@ function buildCharGrid(){
   // 이미 캐릭터를 골랐던 상태라면 시작 버튼 노출
   if(CHAR_SLOTS.some(c=>c&&c.key===chosen))
     $('btnCharStart').style.display='';
-  // 물음표 슬롯: 초보/고급 클리어 기록이 하나라도 있으면 표시
-  const recs=CHAR_SLOTS.map(c=>clearOf(c.run||c.key));
-  const anyE=recs.some(r=>r.e), anyN=recs.some(r=>r.n);
+  // 잠긴 히든 캐릭터는 그리드 안에서 '?' 슬롯으로 직접 표시되므로,
+  // 그리드 바깥의 예고용 물음표 칸(qLeft/qRight)은 사용하지 않는다.
   const qL=$('qLeft'), qR=$('qRight');
-  if(qL){ qL.style.display=anyE?'flex':'none';
-    qL.onclick=()=>toast('모든 캐릭터로 초보 난이도를 다 클리어하면 공개됩니다.',2200); }
-  if(qR){ qR.style.display=anyN?'flex':'none';
-    qR.onclick=()=>toast('모든 캐릭터로 고급 난이도를 다 클리어하면 공개됩니다.',2200); }
+  if(qL){ qL.style.display='none'; qL.onclick=null; }
+  if(qR){ qR.style.display='none'; qR.onclick=null; }
 }
 
 // ── 홈: 새 게임 → 이름 확인 → 난이도 화면
