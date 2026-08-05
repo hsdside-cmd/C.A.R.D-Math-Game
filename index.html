@@ -825,11 +825,14 @@ function loadImages(cb){
 
 /* ==================== [MAPGEN] 난이도 · 맵 생성기 ====================
    매 판 랜덤 · 시드 고정
-   난이도는 둘뿐이다.
-     초급(easy)   : 3지선다   · 격자 11x5 · 약 38개 방
-     고급(normal) : 카드 배치 · 격자 13x6 · 약 50개 방
+   난이도는 셋이다.
+     왕초보(baby)  : 한 자리 +,- 만 · 3지선다 · 하트 10 · 시간제한 없음
+     초급(easy)    : 3지선다   · 격자 11x5 · 약 38개 방
+     고급(normal)  : 카드 배치 · 격자 13x6 · 약 50개 방
    구조는 공통: 지상(십자형 줄기+4개 지역+상점+보물) → 다리 → 마왕성 복도  */
 const DIFF={
+  baby:  {key:'baby',   label:'왕초보', sub:'한 자리 수 더하기·빼기만 · 3개 중 정답 고르기 · 하트 10개',
+          gw:11, gh:5, ow:5, trunk:6,  area:3, castle:0, hubN:3, secMin:2, secMax:2, lordMin:2, lordMax:3, maxSlots:1, ops:['+','-'], mc:true, baby:1, hearts:10, rooms:'약 32개 방'},
   easy:  {key:'easy',   label:'초급', sub:'문제를 보고 3개 중 정답 고르기 (3지선다)',
           gw:11, gh:5, ow:5, trunk:7,  area:3, castle:0, hubN:3, secMin:2, secMax:3, lordMin:2, lordMax:3, maxSlots:1, ops:['+','-'], mc:true, hearts:5, rooms:'약 38개 방'},
   normal:{key:'normal', label:'고급', sub:'숫자 카드를 골라 빈칸 채우기',
@@ -4006,7 +4009,7 @@ function drawObstacle(x,y,rg){
    길이 여러 갈래여도 병아리는 늘 최단 경로 쪽만 가리킨다.
    ========================================================================= */
 function guideOn(){
-  return S && S.diff==='easy' && !isStory() ? true : false;   // 초급(3지선다)에서만
+  return S && (S.diff==='baby' || S.diff==='easy') && !isStory() ? true : false;   // 왕초보·초급에서만
 }
 /* 지금 방에서 미처치 중간보스 방까지, 최단 경로의 첫 방향을 돌려준다 (없으면 null) */
 function guideDir(){
@@ -6246,6 +6249,7 @@ function setSubject(v){
 /* 이번 판에서 다룰 글자 범위 — 난이도로 조절한다 */
 function engPool(){
   const d=(S&&S.diff)||'normal';
+  if(d==='baby')  return ABC.slice(0,6);     // 왕초보: A~F
   if(d==='easy')  return ABC.slice(0,10);    // 초급: A~J
   if(d==='tut'||d==='vtut') return ABC.slice(0,6);
   return ABC;                                // 고급·그 외: A~Z 전체
@@ -6292,10 +6296,12 @@ function genQEngCard(){
 }
 
 function genQ(tier){
+  const D=DIFF[S.diff]||{};
   if(engSubjectOn()){                                  // 영어 모드
-    const mcE = !!(DIFF[S.diff] && DIFF[S.diff].mc);
-    return mcE ? genQEngMC() : genQEngCard();
+    return D.mc ? genQEngMC() : genQEngCard();
   }
+  /* 왕초보: 어떤 캐릭터든(곱셈·10배 담당이라도) 한 자리 더하기·빼기 3지선다만 낸다 */
+  if(D.baby) return partsToMC(genAddSub('addsub1'));
   const mode = mathModeNow();
   const mc = !!(DIFF[S.diff] && DIFF[S.diff].mc);
   if(mode==='mul') return mc ? genQMulMC() : genQMul();
@@ -10878,7 +10884,7 @@ $('btnChapRestart').onclick=()=>{
 
 function buildDiffs(){
   const box=$('diffs'); box.innerHTML='';
-  ['easy','normal'].forEach(k=>{
+  ['baby','easy','normal'].forEach(k=>{
     const D=DIFF[k];
     const d=document.createElement('div');
     d.className='diff'+(k===chosenDiff?' sel':'');
