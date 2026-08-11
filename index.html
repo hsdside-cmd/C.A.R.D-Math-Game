@@ -193,6 +193,11 @@
   .trCells{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
   .trCell{width:clamp(74px,21vw,116px);height:clamp(74px,21vw,116px);
     background:#fff;border-radius:6px;touch-action:none;cursor:crosshair}
+  .trPens{margin-top:10px;display:flex;gap:9px;justify-content:center}
+  .trPen{width:34px;height:34px;border-radius:50%;border:3px solid #6a5f8f;cursor:pointer;
+    padding:0;box-shadow:2px 2px 0 #000;transition:transform .08s}
+  .trPen.on{border-color:#fff;transform:scale(1.18);box-shadow:0 0 9px rgba(255,255,255,.6),2px 2px 0 #000}
+  .trPen:active{transform:scale(1.06)}
   .trMsg{margin-top:9px;font-size:12px;color:#c8bfe0;min-height:18px}
   .trBtns{margin-top:10px;display:flex;gap:8px;justify-content:center}
   .trBtns .btn{min-width:110px}
@@ -7008,6 +7013,21 @@ function checkAnswer(){
      벗어남(spill)  : 아이 획 중 글자 밖으로 나간 비율  → 45% 이하
    ===================================================================== */
 const TRACE_COV=0.55, TRACE_SPILL=0.25, TRACE_MININK=180, TRACE_OVER=3.2;
+/* 따라쓰기 펜 색 — 학생이 고를 수 있다. 고른 색은 기기에 기억해 둔다. */
+const PEN_COLORS=[
+  {key:'red',   name:'빨강', c:'#d02a2a'},
+  {key:'green', name:'초록', c:'#1f8a3a'},
+  {key:'blue',  name:'파랑', c:'#2a3a8a'},
+  {key:'yellow',name:'노랑', c:'#e0a400'},
+  {key:'black', name:'검정', c:'#1a1a20'}
+];
+let PEN='blue';
+try{ const _p=localStorage.getItem('mz_pen'); if(PEN_COLORS.some(x=>x.key===_p)) PEN=_p; }catch(e){}
+function penColor(){ const f=PEN_COLORS.find(x=>x.key===PEN); return f?f.c:'#2a3a8a'; }
+function setPen(k){ PEN=k; try{ localStorage.setItem('mz_pen',k); }catch(e){}
+  const box=$('trPens');
+  if(box) [].forEach.call(box.children, b=>b.classList.toggle('on', b.dataset.k===k));
+}
 let traceState=null;
 function traceNeeded(){
   if(!S) return false;
@@ -7046,6 +7066,10 @@ function openTrace(onPass){
     '<div class="trBox">'+
       '<div class="trTitle">정답을 따라 써 보자</div>'+
       '<div class="trCells">'+cells+'</div>'+
+      '<div class="trPens" id="trPens">'+
+        PEN_COLORS.map(p=>'<button class="trPen'+(p.key===PEN?' on':'')+'" data-k="'+p.key+
+          '" style="background:'+p.c+'" title="'+p.name+'"></button>').join('')+
+      '</div>'+
       '<div class="trMsg" id="trMsg">회색 글자 위를 손가락으로 따라 쓰세요</div>'+
       '<div class="trBtns">'+
         '<button class="btn" id="trClear">지우개</button>'+
@@ -7056,6 +7080,9 @@ function openTrace(onPass){
   traceState={text, onPass, cells:[]};
   [].forEach.call(ov.querySelectorAll('.trCell'), (cv,idx)=>{
     traceState.cells.push(setupTraceCell(cv, text[idx]));
+  });
+  [].forEach.call(ov.querySelectorAll('.trPen'), b=>{
+    b.onclick=()=>{ setPen(b.dataset.k); try{ beep(700,.04); }catch(e){} };
   });
   $('trClear').onclick=()=>{ traceState.cells.forEach(c=>c.clear()); $('trMsg').textContent='다시 따라 써 보자'; };
   $('trOk').onclick=()=>judgeTrace();
@@ -7086,11 +7113,11 @@ function setupTraceCell(cv, ch){
   const start=e=>{ e.preventDefault(); drawing=true; last=pos(e); dot(last); };
   const move=e=>{ if(!drawing) return; e.preventDefault();
     const p=pos(e);
-    ig.strokeStyle='#2a3a8a'; ig.lineWidth=S2*0.075; ig.lineCap='round'; ig.lineJoin='round';
+    ig.strokeStyle=penColor(); ig.lineWidth=S2*0.075; ig.lineCap='round'; ig.lineJoin='round';
     ig.beginPath(); ig.moveTo(last.x,last.y); ig.lineTo(p.x,p.y); ig.stroke();
     last=p; inked++; repaint(); };
   const end=e=>{ drawing=false; };
-  function dot(p){ ig.fillStyle='#2a3a8a'; ig.beginPath(); ig.arc(p.x,p.y,S2*0.037,0,7); ig.fill(); inked++; repaint(); }
+  function dot(p){ ig.fillStyle=penColor(); ig.beginPath(); ig.arc(p.x,p.y,S2*0.037,0,7); ig.fill(); inked++; repaint(); }
   cv.addEventListener('pointerdown',start); cv.addEventListener('pointermove',move);
   cv.addEventListener('pointerup',end);     cv.addEventListener('pointerleave',end);
   cv.addEventListener('touchstart',start,{passive:false});
