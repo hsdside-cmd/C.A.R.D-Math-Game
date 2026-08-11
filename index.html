@@ -3026,6 +3026,43 @@ function gateLocked(def,dir){
   return !S.bosses[g];                             // (구버전 호환)
 }
 function keyCount(){ return S.keys ? Object.keys(S.keys).length : 0; }
+/* ==================== [ADAPT] 실력에 맞춘 탐험 난이도 ====================
+   같은 캐릭터·같은 난이도를 반복하는 학생에게는 지도가 조금씩 더 까다로워진다.
+   ★ 문제(연산·낱말)의 난이도는 절대 건드리지 않는다. 교육과정에 묶여 있기 때문이다.
+     바뀌는 것은 탐험 쪽뿐 — 몹 수, 몹 속도, 움직임(무작위→추적), 장애물 수.
+   등급 0~3 :
+     0 첫 도전            1 한 번 깨 봄
+     2 여러 번 깼거나 빠름  3 아주 익숙(윗 난이도까지 깬 학생이 아래로 내려온 경우 포함)
+   ======================================================================= */
+function adaptTier(){
+  try{
+    if(!S || S.mode!=='race') return 0;          // 이야기 모드는 그대로 둔다
+    const ck=(S.run||S.char)||'chara_b';
+    const d=S.diff||'normal';
+    let t=0;
+    /* 같은 캐릭터·난이도를 몇 번 깼는가 */
+    const recs=getRecords(d, ck)||[];
+    if(recs.length>=1) t=1;
+    if(recs.length>=3) t=2;
+    if(recs.length>=6) t=3;
+    /* 기록이 빠르면 한 단계 더 */
+    if(recs.length){
+      const best=recs[0] && recs[0].time;
+      if(best && best < 180) t=Math.min(3,t+1);   // 3분 이내면 능숙하다고 본다
+    }
+    /* 윗 난이도를 깬 학생이 아래 난이도로 내려온 경우 */
+    const c=clearOf(ck);
+    if(d==='baby'  && (c.e||c.n)) t=Math.max(t,2);
+    if(d==='easy'  && c.n)        t=Math.max(t,2);
+    if(d!=='normal' && c.n && (getRecords('normal',ck)||[]).length>=2) t=3;
+    return Math.max(0, Math.min(3, t));
+  }catch(e){ return 0; }
+}
+/* 등급별 조정값 */
+function adaptMobBonus(){  return [0,1,1,2][adaptTier()]; }        // 방마다 몹 +N
+function adaptSpeedMul(){  return [1, 1.12, 1.25, 1.4][adaptTier()]; }
+function adaptObsBonus(){  return [0,1,2,3][adaptTier()]; }        // 장애물 +N (길이 좁아진다)
+function adaptChaseRate(){ return [0, 0.15, 0.3, 0.45][adaptTier()]; } // 이 확률로 나를 쫓는다
 function buildScreen(key,entry){
   const def=MAP[key]; const R=rng(hash(S.seed+':'+key));
   const solid={}, obs=[];
@@ -3043,6 +3080,8 @@ function buildScreen(key,entry){
   }
   // decorative obstacles
   let tries=0, want=(def.rg==='bridge'||def.rg==='timegate'||def.rg==='dogbridge'||def.tut)?0:Array.isArray(def.ins)?2:(def.boss||def.shop)?3:5;
+  /* 익숙한 학생에게는 장애물을 늘려 길을 좁힌다 (다리·튜토리얼 방은 그대로) */
+  if(want>0 && !def.boss && !def.shop) want += adaptObsBonus();
   while(obs.length<want && tries++<80){
     const tx=2+Math.floor(R()*12), ty=2+Math.floor(R()*7);
     if(CROSS(tx,ty)) continue;
@@ -3059,6 +3098,7 @@ function buildScreen(key,entry){
     if(def.chest) n=2;
     if(isTrap) n=TRAP_MOBS;                      // 12마리
     if(isDare) n=1;                              // 도전방은 한 마리만
+    if(!isTrap && !isDare && !def.boss && n>0) n += adaptMobBonus();   // 익숙하면 몹이 는다
     const doors=[...(ENTRY[key]||[])].map(d=>ENTRY_POS[d]);
     const nearDoor=(x,y)=>doors.some(p=>Math.hypot(x-p.x,y-p.y)<SAFE_R);
     const spots=[];
@@ -3083,11 +3123,13 @@ function buildScreen(key,entry){
       const tx=sp.tx, ty=sp.ty;
       const mobPool=REGION_MOBS[def.rg]||MOBKIND;
       const kind=mobPool[Math.floor(R()*mobPool.length)];
-      const sp2=isTrap?.175:.35;                 // 함정 몹은 절반 속도
+      const sp2=(isTrap?.175:.35) * adaptSpeedMul();   // 익숙하면 더 빠르게 움직인다
       mobs.push({i,x:tx*TS+8,y:PY+ty*TS+8,kind,rg:def.rg,
         tier: def.rg==='castle'?2:1,
         hits: isTrap?1:(isDare?3:2), trap: isTrap?1:0, dare: isDare?1:0,
         name: (isDare?'도전! ':'')+mobName(def.rg,kind),
+        spd: sp2,
+        chase: (!isTrap && R()<adaptChaseRate()) ? 1 : 0,   // 일부는 나를 쫓아온다
         vx:(R()<.5?-1:1)*sp2, vy:(R()<.5?-1:1)*sp2, t:R()*100});
     }
   }
@@ -6024,7 +6066,15 @@ function update(){
   scr.mobs.forEach(m=>{
     if(battle.on) return;
     m.t++;
-    if(m.t%70===0){ const a=Math.random()*Math.PI*2; m.vx=Math.cos(a)*.4; m.vy=Math.sin(a)*.4; }
+    const sp=m.spd||.4;
+    if(m.chase){
+      /* 쫓아오는 몹: 가까우면 나를 향하고, 멀면 평소처럼 어슬렁거린다 */
+      const dx=S.px-m.x, dy=S.py-m.y, dist=Math.hypot(dx,dy)||1;
+      if(dist<86){ m.vx=dx/dist*sp; m.vy=dy/dist*sp; }
+      else if(m.t%70===0){ const a=Math.random()*Math.PI*2; m.vx=Math.cos(a)*sp; m.vy=Math.sin(a)*sp; }
+    } else if(m.t%70===0){
+      const a=Math.random()*Math.PI*2; m.vx=Math.cos(a)*sp; m.vy=Math.sin(a)*sp;
+    }
     if(canMoveMob(m.x+m.vx,m.y)) m.x+=m.vx; else m.vx*=-1;
     if(canMoveMob(m.x,m.y+m.vy)) m.y+=m.vy; else m.vy*=-1;
     if(!safe && Math.abs(m.x-S.px)<11 && Math.abs(m.y-S.py)<11) startBattle(m,false);
@@ -11727,6 +11777,10 @@ function launchGame(withCountdown){
     fc.classList.add('on');
     requestAnimationFrame(()=>requestAnimationFrame(()=>{ fc.classList.remove('on'); }));
     toast('출발! 화살표 방향으로만 이동할 수 있다.',2400);
+    try{ const t=adaptTier();
+      if(t>=2) setTimeout(()=>toast(t>=3?'★ 몬스터들이 잔뜩 벼르고 있다!\n(많이 해 본 만큼 더 어려워졌다)'
+                                        :'몬스터들이 조금 더 사나워졌다!',2600), 2600);
+    }catch(e){}
     setTimeout(()=>{ try{ storyEvent('start'); }catch(e){} }, 700);
   };
   if(!withCountdown){ startPlay(); return; }
