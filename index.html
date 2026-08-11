@@ -6485,22 +6485,58 @@ const KORQ=[
   ['🥶','춥다','덥다','아프다','v'], ['🥵','덥다','춥다','시원하다','v'], ['🤒','아프다','건강하다','졸리다','v'],
   ['🥱','졸리다','배고프다','신나다','v'], ['😋','맛있다','맵다','짜다','v'], ['🌶️','맵다','달다','시다','v'],
 ];
+/* 국어 고급 — 조사 맞추기. ___ 자리에 알맞은 조사를 고른다.
+   받침이 있으면 은/이/을/과, 없으면 는/가/를/와 로 갈리는 규칙이 핵심이다. */
+const KORJO=[
+  ['사과___ 맛있다.','는','은','이'], ['수박___ 크다.','은','는','가'],
+  ['나___ 학교에 간다.','는','은','를'], ['동생___ 잠을 잔다.','은','는','가'],
+  ['바다___ 넓다.','는','은','이'], ['책상___ 무겁다.','은','는','가'],
+  ['토끼___ 귀엽다.','는','은','가'], ['연필___ 뾰족하다.','은','는','이'],
+  ['바나나___ 노랗다.','는','은','가'], ['가방___ 크다.','은','는','이'],
+  ['강아지___ 뛰어간다.','가','이','은'], ['꽃___ 피었다.','이','가','는'],
+  ['새___ 날아간다.','가','이','를'], ['눈___ 내린다.','이','가','를'],
+  ['나비___ 앉았다.','가','이','은'], ['별___ 반짝인다.','이','가','는'],
+  ['비___ 온다.','가','이','를'], ['공___ 굴러간다.','이','가','는'],
+  ['고양이___ 운다.','가','이','은'], ['물___ 맑다.','이','가','를'],
+  ['밥___ 먹는다.','을','를','이'], ['우유___ 마신다.','를','을','가'],
+  ['책___ 읽는다.','을','를','이'], ['노래___ 부른다.','를','을','이'],
+  ['손___ 씻는다.','을','를','가'], ['공부___ 한다.','를','을','이'],
+  ['그림___ 그린다.','을','를','가'], ['바지___ 입는다.','를','을','이'],
+  ['문___ 연다.','을','를','가'], ['모자___ 쓴다.','를','을','이'],
+  ['학교___ 간다.','에','에서','를'], ['교실___ 공부한다.','에서','에','를'],
+  ['집___ 잔다.','에서','에','를'], ['놀이터___ 논다.','에서','에','를'],
+  ['병원___ 갔다.','에','에서','가'], ['바다___ 헤엄친다.','에서','에','를'],
+  ['의자___ 앉는다.','에','에서','를'], ['시장___ 물건을 산다.','에서','에','는'],
+  ['사과___ 배를 샀다.','와','과','를'], ['연필___ 지우개가 있다.','과','와','는'],
+  ['엄마___ 함께 간다.','와','과','를'], ['동생___ 놀았다.','과','와','를'],
+  ['우유___ 빵을 먹었다.','와','과','는'], ['책___ 공책을 챙겼다.','과','와','를'],
+  ['연필___ 쓴다.','로','으로','를'], ['손___ 잡는다.','으로','로','을'],
+  ['학교___ 간다.','로','으로','에'], ['젓가락___ 먹는다.','으로','로','을'],
+  ['나___ 가고 싶다.','도','만','를'], ['너___ 오너라.','만','도','를'],
+];
 function korPool(){
   const d=(S&&S.diff)||'normal';
-  /* 동사·형용사는 '-다'로 끝나 세 글자가 많다.
-     글자 수만으로 자르면 왕초보에서 아예 안 나오므로, 세 글자 동사까지는 넣어 준다. */
   const isVerb=q=>q[4]==='v';
+  /* 왕초보: 짧은 낱말(동사는 세 글자까지) */
   if(d==='baby') return KORQ.filter(q=>q[1].length<=2 || (isVerb(q) && q[1].length<=3));
-  if(d==='easy') return KORQ.filter(q=>q[1].length<=3 || isVerb(q));
-  return KORQ;                                            // 고급: 전부
+  return KORQ;                    /* 초급: 낱말 전체 */
 }
 /* 국어는 어느 난이도에서나 3지선다(그림을 보고 낱말을 고른다) */
 function genQKor(){
+  const d=(S&&S.diff)||'normal';
+  if(d==='normal') return genQKorJo();          // 고급: 조사 맞추기
   const pool=korPool();
   const q=pool[Math.floor(Math.random()*pool.length)];
   const choices=[q[1], q[2], q[3]];
   for(let i=choices.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));const t=choices[i];choices[i]=choices[j];choices[j]=t;}
   return {mc:true, kor:1, pic:q[0], text:q[0], answer:q[1], choices:choices};
+}
+/* 고급: 문장 속 빈칸에 알맞은 조사를 고른다 (그림 없음 · 쓰기 없음) */
+function genQKorJo(){
+  const q=KORJO[Math.floor(Math.random()*KORJO.length)];
+  const choices=[q[1], q[2], q[3]];
+  for(let i=choices.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));const t=choices[i];choices[i]=choices[j];choices[j]=t;}
+  return {mc:true, kor:1, jo:1, text:q[0], answer:q[1], choices:choices};
 }
 /* ==================== [ENG] 영어 모드 — 알파벳 이름 ====================
    수학 모드와 같은 전투 구조를 그대로 쓴다.
@@ -6828,7 +6864,10 @@ function nextQuestionMC(){
   const eq=$('eq');
   eq.innerHTML=''; battle.slots=[];
   const d=document.createElement('div'); d.textContent=battle.q.text;
-  if(battle.q.kor){                       // 국어: 그림을 크게 보여 준다
+  if(battle.q.kor && battle.q.jo){        // 조사 문제: 문장이므로 읽기 좋은 크기로
+    d.style.fontSize='clamp(20px,5.4vw,30px)';
+    d.style.lineHeight='1.5';
+  } else if(battle.q.kor){                // 낱말 문제: 그림을 크게 보여 준다
     d.style.fontSize='clamp(56px,17vw,96px)';
     d.style.lineHeight='1.15';
   } else {
@@ -6843,7 +6882,7 @@ function nextQuestionMC(){
   });
   const _sk1 = battle.isBoss ? bossSkin(battle.foe.id) : null;
   setMsg((battle.isBoss?(_sk1&&_sk1.still?'자물쇠! ':'보스전! '):'')+
-    (battle.q.kor?'그림에 알맞은 낱말을 골라라!':'정답을 골라라!'),'');
+    (battle.q.jo?'빈칸에 알맞은 말을 골라라!':(battle.q.kor?'그림에 알맞은 낱말을 골라라!':'정답을 골라라!')),'');
   resetFoeForQuestion();
 }
 function pickMC(btn, v){
@@ -6977,6 +7016,7 @@ const TRACE_COV=0.55, TRACE_SPILL=0.25, TRACE_MININK=180, TRACE_OVER=3.2;
 let traceState=null;
 function traceNeeded(){
   if(!S || S.diff!=='normal') return false;      // 고급에서만
+  try{ if(korSubjectOn()) return false; }catch(e){}   // 국어 고급(조사)은 쓰기 없음
   const t=traceText();
   return !!t && t.length<=4;                     // 너무 길면 생략
 }
@@ -11423,9 +11463,9 @@ $('btnChapRestart').onclick=()=>{
 
 /* 영어 모드일 때의 난이도 설명 (수학 문구를 그대로 쓰면 어색하다) */
 const DIFF_SUB_KOR = {
-  baby:  '한두 글자 낱말 · 그림 보고 고르기 · 하트 10개',
-  easy:  '세 글자까지 · 그림 보고 알맞은 낱말 고르기',
-  normal:'모든 낱말 · 그림 보고 알맞은 낱말 고르기'
+  baby:  '짧은 낱말 · 그림 보고 고르기 · 하트 10개',
+  easy:  '모든 낱말 · 그림 보고 알맞은 낱말 고르기',
+  normal:'문장의 빈칸에 알맞은 조사 고르기'
 };
 const DIFF_SUB_ENG = {
   baby:  'A~F 알파벳 · 3개 중 정답 고르기 · 하트 10개',
