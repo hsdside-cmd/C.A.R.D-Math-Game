@@ -190,7 +190,9 @@
   .trBox{background:linear-gradient(#241f33,#171322);border:3px solid var(--gold);
     border-radius:12px;padding:14px;max-width:min(560px,96vw);text-align:center}
   .trTitle{color:var(--gold);font-weight:900;font-size:clamp(15px,4.4vw,20px);margin-bottom:10px}
-  .trCells{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+  .trCells{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;align-items:flex-start}
+  .trCellWrap{display:flex;flex-direction:column;align-items:center;gap:3px}
+  .trCap{font-size:12px;color:#ffe9a8;font-weight:700;letter-spacing:.5px}
   .trCell{width:clamp(74px,21vw,116px);height:clamp(74px,21vw,116px);
     background:#fff;border-radius:6px;touch-action:none;cursor:crosshair}
   .trPens{margin-top:10px;display:flex;gap:9px;justify-content:center}
@@ -1492,6 +1494,69 @@ function assignTraps(M){
     for(let i=0;i<DARE_COUNT && p<rest.length;i++)   M[rest[p++]].dare=1;
   }catch(e){}
   return M;
+}
+/* ==================== [DEX] 몬스터 도감 ====================
+   잡은 몬스터를 '지역 × 종류'로 기록해 둔다. 기기에 계속 남아 판이 끝나도 사라지지 않는다.
+   반복해서 놀 이유를 만들어 주는 장치다.
+   ======================================================================= */
+const DEXKEY='mz_dex';
+function dexRead(){ try{ return JSON.parse(localStorage.getItem(DEXKEY))||{}; }catch(e){ return {}; } }
+function dexWrite(o){ try{ localStorage.setItem(DEXKEY, JSON.stringify(o)); }catch(e){} }
+function dexAdd(rg, kind){
+  if(!rg||!kind) return;
+  const d=dexRead(), k=rg+':'+kind;
+  const first=!d[k];
+  d[k]=(d[k]||0)+1; dexWrite(d);
+  if(first){
+    try{ toast('📖 새로운 몬스터 발견!  '+mobName(rg,kind),2200); }catch(e){}
+    try{ beep(880,.05); setTimeout(()=>beep(1180,.07),70); }catch(e){}
+  }
+}
+/* 도감에 실릴 전체 목록 (지역 × 그 지역에 나오는 종류) */
+function dexAll(){
+  const out=[];
+  for(const rg in REGION_MOBS){
+    if(rg==='shop'||rg==='bridge'||rg==='dogbridge'||rg==='timegate') continue;
+    (REGION_MOBS[rg]||[]).forEach(kind=>out.push({rg,kind}));
+  }
+  return out;
+}
+function dexStats(){
+  const d=dexRead(), all=dexAll();
+  let got=0, total=0;
+  all.forEach(e=>{ total++; if(d[e.rg+':'+e.kind]) got++; });
+  return {got,total,data:d,all};
+}
+/* 도감 화면 */
+function openDex(){
+  const st=dexStats();
+  let ov=$('dexOv');
+  if(ov) ov.remove();
+  ov=document.createElement('div'); ov.id='dexOv';
+  ov.style.cssText='position:fixed;inset:0;z-index:99998;background:#12101a;color:#eee;'+
+    'font:13px/1.6 system-ui,sans-serif;overflow:auto;padding:14px';
+  const pct=st.total?Math.round(st.got/st.total*100):0;
+  let html='<div style="max-width:900px;margin:0 auto">'+
+    '<h2 style="color:#f2c14e;margin:0 0 4px">📖 몬스터 도감</h2>'+
+    '<div style="color:#9aa4b8;margin-bottom:10px">'+st.got+' / '+st.total+' 마리 발견 ('+pct+'%)</div>'+
+    '<div style="background:#2a2438;height:12px;border:2px solid #f2c14e;margin-bottom:14px">'+
+      '<div style="background:#f2c14e;height:100%;width:'+pct+'%"></div></div>'+
+    '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px">';
+  st.all.forEach(e=>{
+    const n=st.data[e.rg+':'+e.kind]||0;
+    const nm = n? mobName(e.rg,e.kind) : '???';
+    html+='<div style="border:2px solid '+(n?'#f2c14e':'#3a3450')+';background:'+(n?'#241f33':'#191524')+
+      ';padding:7px;text-align:center;border-radius:6px">'+
+      '<div style="font-size:11px;color:'+(n?'#ffe9a8':'#5a5470')+';min-height:30px">'+nm+'</div>'+
+      '<div style="font-size:10px;color:'+(n?'#9aa4b8':'#3a3450')+';margin-top:3px">'+(n? n+'마리':'미발견')+'</div>'+
+    '</div>';
+  });
+  html+='</div><div style="margin-top:16px;text-align:center">'+
+    '<button id="dexClose" style="padding:10px 26px;background:#f2c14e;color:#201a10;'+
+    'font-weight:700;border:0;border-radius:6px;font-size:14px">닫기</button></div></div>';
+  ov.innerHTML=html;
+  document.body.appendChild(ov);
+  $('dexClose').onclick=()=>ov.remove();
 }
 function generateMap(seed, dk){
   if(dk) DIFFKEY=dk;
@@ -7029,13 +7094,27 @@ function setPen(k){ PEN=k; try{ localStorage.setItem('mz_pen',k); }catch(e){}
   if(box) [].forEach.call(box.children, b=>b.classList.toggle('on', b.dataset.k===k));
 }
 let traceState=null;
+/* ㄹ은 획이 촘촘해 아이들이 가장 많이 헤맨다. 그런 글자는 판정을 더 넉넉히 한다.
+     받침이 ㄹ 계열(ㄹ·ㄺ·ㄻ·ㄼ…) → 10%p 여유
+     첫소리가 ㄹ                    → 5%p 여유
+   여유는 '덮음 기준을 낮추고, 벗어남·칠한양 허용을 높이는' 모든 방향에 쓴다. */
+function charLeniency(ch){
+  const c=ch.charCodeAt(0)-0xAC00;
+  if(c<0 || c>11171) return 0;               // 한글 음절이 아니면 여유 없음
+  const cho=Math.floor(c/588), jong=c%28;
+  const RIEUL_JONG=[8,9,10,11,12,13,14,15];  // ㄹ, ㄺ, ㄻ, ㄼ, ㄽ, ㄾ, ㄿ, ㅀ
+  if(RIEUL_JONG.indexOf(jong)>=0) return 0.10;
+  if(cho===5) return 0.05;                   // 첫소리 ㄹ
+  return 0;
+}
 function traceNeeded(){
   if(!S) return false;
   /* 국어는 '초급(낱말)'에서 따라 쓴다. 고급은 조사 고르기라 쓰기가 없다.
      수학·영어는 지금까지대로 고급에서 쓴다. */
   try{
-    if(korSubjectOn()) { if(S.diff!=='easy') return false; }
-    else if(S.diff!=='normal') return false;
+    if(korSubjectOn())      { if(S.diff!=='easy') return false; }  // 국어: 초급(낱말)만
+    else if(engSubjectOn()) { /* 영어: 모든 난이도에서 쓴다 */ }
+    else if(S.diff!=='normal') return false;                       // 수학: 고급만
   }catch(e){ if(S.diff!=='normal') return false; }
   const t=traceText();
   return !!t && t.length<=4;                     // 너무 길면 생략
@@ -7044,8 +7123,14 @@ function traceNeeded(){
 function traceText(){
   const q=battle.q; if(!q) return '';
   if(q.kor) return q.answer||'';                 // 국어: 낱말
-  if(q.eng){                                     // 영어: 글자
-    return /^[A-Z]$/.test(q.answer)? q.answer : '';
+  if(q.eng){
+    /* 영어는 어느 방향 문제든 '알파벳'을 따라 쓴다.
+       (글자→이름 문제면 answer 가 한글 이름이므로 text 쪽이 알파벳이다) */
+    if(/^[A-Z]$/.test(q.answer)) return q.answer;
+    if(/^[A-Z]$/.test(q.text))   return q.text;
+    if(q.tok){ let a=''; q.tok.forEach(t=>{ if(t.t==='slot') a+=(t.ans||''); });
+               if(/^[A-Z]+$/.test(a)) return a; }
+    return '';
   }
   if(q.mc) return String(q.answer||'');          // 3지선다: 답
   /* 카드 배치: 빈칸에 들어간 정답들을 이어 붙인다 */
@@ -7060,8 +7145,18 @@ function openTrace(onPass){
   if(ov) ov.remove();
   ov=document.createElement('div'); ov.id='traceOv';
   let cells='';
-  for(let i=0;i<text.length;i++)
-    cells+='<canvas class="trCell" width="192" height="192" data-i="'+i+'"></canvas>';
+  const showName = (()=>{ try{ return engSubjectOn(); }catch(e){ return false; } })();
+  for(let i=0;i<text.length;i++){
+    const ch=text[i];
+    let cap='';
+    if(showName && /^[A-Z]$/.test(ch)){
+      try{ cap='<div class="trCap">'+engNameOf(ch)+'</div>'; }catch(e){}
+    }
+    cells+='<div class="trCellWrap">'+
+             '<canvas class="trCell" width="192" height="192" data-i="'+i+'"></canvas>'+
+             cap+
+           '</div>';
+  }
   ov.innerHTML=
     '<div class="trBox">'+
       '<div class="trTitle">정답을 따라 써 보자</div>'+
