@@ -190,6 +190,12 @@
   .trBox{background:linear-gradient(#241f33,#171322);border:3px solid var(--gold);
     border-radius:12px;padding:14px;max-width:min(560px,96vw);text-align:center}
   .trTitle{color:var(--gold);font-weight:900;font-size:clamp(15px,4.4vw,20px);margin-bottom:10px}
+  /* 문제 칸(#eq) 안에 들어가는 따라쓰기 */
+  .trInline{width:100%;display:flex;flex-direction:column;align-items:center;gap:6px;margin-top:4px}
+  .trInline .trCell{width:clamp(74px,21vw,116px);height:clamp(74px,21vw,116px)}
+  .trInline .trPen{width:26px;height:26px;border-width:2px}
+  .trInline .trBtns .btn{min-width:92px;padding:6px 10px;font-size:13px}
+  .trInline .trMsg{margin-top:2px}
   .trCells{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;align-items:flex-start}
   .trCellWrap{display:flex;flex-direction:column;align-items:center;gap:3px}
   .trCap{font-size:12px;color:#ffe9a8;font-weight:700;letter-spacing:.5px}
@@ -319,6 +325,10 @@
   .foe{display:flex;align-items:flex-end;gap:12px;justify-content:center;position:relative;padding-top:6px;min-height:clamp(140px,26vh,230px)}
   .foe img{image-rendering:pixelated;image-rendering:crisp-edges;height:clamp(130px,24vh,300px);filter:drop-shadow(0 6px 0 rgba(0,0,0,.5))}
   .foe canvas{image-rendering:pixelated;image-rendering:crisp-edges;height:clamp(120px,22vh,300px)}
+  /* 마왕 모드: 쓰기 칸을 넓게 쓰기 위해 적을 절반 크기로 줄인다 */
+  body.demonMode .foe img{height:clamp(65px,12vh,150px)}
+  body.demonMode .foe canvas{height:clamp(60px,11vh,150px)}
+  body.demonMode.portrait #foeArt canvas{height:min(15vh,110px)!important}
   #foeArt{position:relative;display:flex;justify-content:center}
   .foe.hit{animation:shake .25s}
   .foe.smirk img, .foe.smirk canvas{animation:smirk 1.6s ease-in-out infinite}
@@ -881,7 +891,7 @@ function loadImages(cb){
       im.src=ASSETS[k][v]; IMG[k][v]=im;
     });
   });
-  IMG['chara_musa']=IMG['chara_b']; IMG['chara_cat']=IMG['chara_b']; IMG['chara_ghost']=IMG['chara_b']; IMG['chara_robot']=IMG['chara_b']; IMG['hero']=IMG['chara_b']; IMG['heroine']=IMG['chara_b'];   // 절차적 바디; 이미지는 게이트용
+  IMG['chara_musa']=IMG['chara_b']; IMG['chara_cat']=IMG['chara_b']; IMG['chara_ghost']=IMG['chara_b']; IMG['chara_robot']=IMG['chara_b']; IMG['hero']=IMG['chara_b']; IMG['heroine']=IMG['chara_b']; IMG['demon']=IMG['chara_b'];   // 절차적 바디; 이미지는 게이트용
 }
 
 /* ==================== [MAPGEN] 난이도 · 맵 생성기 ====================
@@ -4398,7 +4408,9 @@ function drawTapMarker(){
   cx.fillRect(x-1,y-1,2,2);
 }
 function drawPlayer(){
-  const im=IMG[S.char].w; if(!im.complete||!im.width) return;
+  /* IMG 에 등록이 빠진 캐릭터라도 화면이 통째로 멈추지 않게 기본값을 쓴다 */
+  const rec=IMG[S.char]||IMG['chara_b'];
+  const im=rec && rec.w; if(!im||!im.complete||!im.width) return;
   const w=im.width, h=im.height;
   const moving=(keys.U||keys.D||keys.L||keys.R);
   const proc=(typeof HERO_PAL!=='undefined' && HERO_PAL[S.char]);
@@ -6577,6 +6589,7 @@ const KORQ=[
      왕초보 1~2어절 · 초급 2~4어절 · 고급 8어절 안팎의 문장
    ============================================================================ */
 const DEMON_TEXT={
+  /* 왕초보 1~2음절 · 초급 2~4음절 · 고급 2어절 문장 (음절 = 글자 하나 = 칸 하나) */
   baby:[
     '밥',
     '물',
@@ -6588,6 +6601,16 @@ const DEMON_TEXT={
     '집',
     '손',
     '눈',
+    '귀',
+    '코',
+    '입',
+    '발',
+    '해',
+    '불',
+    '새',
+    '말',
+    '소',
+    '문',
     '나무',
     '하늘',
     '바다',
@@ -6596,20 +6619,56 @@ const DEMON_TEXT={
     '친구',
     '가방',
     '연필',
-    '강아지',
-    '고양이',
-    '토끼',
     '사과',
     '우유',
     '바람',
-    '큰 산',
-    '흰 눈',
-    '붉은 꽃',
-    '푸른 바다',
-    '작은 집',
-    '새 책'
+    '모자',
+    '신발',
+    '안경',
+    '토끼',
+    '여우',
+    '다리',
+    '머리',
+    '구슬',
+    '지갑'
   ],
   easy:[
+    '강아지',
+    '고양이',
+    '무지개',
+    '코끼리',
+    '다람쥐',
+    '병아리',
+    '호랑이',
+    '자전거',
+    '운동장',
+    '도서관',
+    '그림책',
+    '색연필',
+    '지우개',
+    '운동화',
+    '책가방',
+    '선생님',
+    '할머니',
+    '동생들',
+    '미끄럼',
+    '소나기',
+    '해바라기',
+    '무당벌레',
+    '코스모스',
+    '할아버지',
+    '이야기',
+    '놀이터',
+    '우산살',
+    '장갑',
+    '시계',
+    '우산',
+    '안개',
+    '연못',
+    '가위',
+    '풍선'
+  ],
+  normal:[
     '밥을 먹는다',
     '물을 마신다',
     '책을 읽는다',
@@ -6622,6 +6681,10 @@ const DEMON_TEXT={
     '집으로 온다',
     '친구와 논다',
     '동생과 걷는다',
+    '산으로 오른다',
+    '바다를 본다',
+    '편지를 쓴다',
+    '공을 던진다',
     '꽃이 피었다',
     '눈이 내린다',
     '별이 반짝인다',
@@ -6630,30 +6693,16 @@ const DEMON_TEXT={
     '강아지가 뛴다',
     '고양이가 운다',
     '달이 떠올랐다',
-    '나는 밥을 먹는다',
-    '너는 물을 마신다',
-    '우리는 함께 간다',
-    '형은 책을 읽는다',
-    '누나가 노래를 부른다',
-    '동생이 그림을 그린다',
-    '하늘이 매우 푸르다',
-    '바다가 아주 넓다',
-    '산이 정말 높다'
-  ],
-  normal:[
-    '나는 아침에 일어나 세수를 하고 학교에 간다',
-    '동생은 마당에서 강아지와 함께 신나게 뛰어놀았다',
-    '우리 가족은 주말에 바다로 놀러 가기로 했다',
-    '선생님께서 오늘 배운 내용을 다시 한번 설명해 주셨다',
-    '친구와 나는 도서관에서 재미있는 책을 함께 읽었다',
-    '봄이 되자 마당에 예쁜 꽃들이 활짝 피어났다',
-    '형은 저녁을 먹은 뒤에 숙제를 하고 일찍 잤다',
-    '어제 내린 눈이 온 세상을 하얗게 덮어 버렸다',
-    '나는 어머니를 도와 저녁 밥상을 함께 차렸다',
-    '운동장에서 아이들이 공을 차며 즐겁게 놀고 있다',
-    '할머니께서 들려주신 옛날이야기가 무척 재미있었다',
-    '비가 그치고 하늘에 아름다운 무지개가 곱게 떴다'
+    '비가 그쳤다',
+    '해가 떠오른다',
+    '종이 울린다',
+    '기차가 지나간다',
+    '나무가 자란다',
+    '구름이 흐른다',
+    '아기가 웃는다',
+    '물이 흐른다'
   ]
+
 };
 function demonOn(){
   try{ return korSubjectOn() && ((S&&(S.run||S.char))==='demon'); }catch(e){ return false; }
@@ -6862,6 +6911,8 @@ function battleTrackFor(foe, isBoss){
 }
 function startBattle(foe,isBoss){
   battle.on=true; battle.foe=foe; battle.isBoss=isBoss;
+  /* 마왕 모드는 쓰기 칸을 넓게 써야 해서 적을 작게 그린다 */
+  try{ document.body.classList.toggle('demonMode', demonOn()); }catch(e){}
   try{ hideToast(); }catch(e){}          // 문제를 가리지 않게 안내말을 먼저 치운다
   setBGM(battleTrackFor(foe, isBoss));
   if(demonOn()){
@@ -7269,11 +7320,10 @@ function traceText(){
 function openTrace(onPass){
   const text=traceText();
   if(!text){ onPass(); return; }
-  let ov=$('traceOv');
-  if(ov) ov.remove();
-  ov=document.createElement('div'); ov.id='traceOv';
-  let cells='';
+  /* 새 창을 띄우지 않고, 문제가 나오던 자리(#eq)에 그대로 칸을 놓는다 */
+  const eq=$('eq'); if(!eq){ onPass(); return; }
   const showName = (()=>{ try{ return engSubjectOn(); }catch(e){ return false; } })();
+  let cells='';
   for(let i=0;i<text.length;i++){
     const ch=text[i];
     let cap='';
@@ -7285,38 +7335,35 @@ function openTrace(onPass){
              cap+
            '</div>';
   }
-  ov.innerHTML=
-    '<div class="trBox">'+
-      '<div class="trTitle">정답을 따라 써 보자</div>'+
+  eq.innerHTML=
+    '<div class="trInline" id="trInline">'+
       '<div class="trCells">'+cells+'</div>'+
       '<div class="trPens" id="trPens">'+
         PEN_COLORS.map(p=>'<button class="trPen'+(p.key===PEN?' on':'')+'" data-k="'+p.key+
           '" style="background:'+p.c+'" title="'+p.name+'"></button>').join('')+
       '</div>'+
-      '<div class="trMsg" id="trMsg">회색 글자 위를 손가락으로 따라 쓰세요</div>'+
+      '<div class="trMsg" id="trMsg">회색 글자 위를 따라 쓰세요</div>'+
       '<div class="trBtns">'+
         '<button class="btn" id="trClear">지우개</button>'+
         '<button class="btn" id="trOk" style="border-color:var(--gold);background:#4a3c17">다 썼어요</button>'+
       '</div>'+
     '</div>';
-  document.body.appendChild(ov);
-  traceState={text, onPass, cells:[]};
-  [].forEach.call(ov.querySelectorAll('.trCell'), (cv,idx)=>{
+  traceState={text, onPass, cells:[], busy:0, inline:1};
+  [].forEach.call(eq.querySelectorAll('.trCell'), (cv,idx)=>{
     traceState.cells.push(setupTraceCell(cv, text[idx]));
   });
-  [].forEach.call(ov.querySelectorAll('.trPen'), b=>{
+  [].forEach.call(eq.querySelectorAll('.trPen'), b=>{
     b.onclick=()=>{ setPen(b.dataset.k); try{ beep(700,.04); }catch(e){} };
   });
   $('trClear').onclick=()=>{ traceState.cells.forEach(c=>c.clear());
     traceState.busy=0; $('trMsg').textContent='다시 따라 써 보자'; };
   $('trOk').onclick=()=>{
-    /* 연타로 여러 번 채점되는 것을 막는다 */
-    if(traceState && traceState.busy) return;
+    if(traceState && traceState.busy) return;   // 연타 방지
     if(traceState) traceState.busy=1;
     judgeTrace();
   };
 }
-/* 칸 하나: 모눈 + 연한 회색 글자 + 손글씨 레이어 */
+
 function setupTraceCell(cv, ch){
   const g=cv.getContext('2d');
   const S2=cv.width;
@@ -7400,14 +7447,18 @@ function judgeTrace(){
     if(traceState) traceState.busy=0;   // 다시 쓸 수 있게 잠금을 푼다
     $('trMsg').textContent=why;
     try{ beep(200,.1); }catch(e){}
-    const b=$('traceOv').querySelector('.trBox');
-    b.classList.remove('quake'); void b.offsetWidth; b.classList.add('quake');
+    const b=$('trInline') || (($('traceOv')||{}).querySelector? $('traceOv').querySelector('.trBox') : null);
+    if(b){ b.classList.remove('quake'); void b.offsetWidth; b.classList.add('quake'); }
     return;
   }
   try{ beep(1046,.07); setTimeout(()=>beep(1318,.09),80); }catch(e){}
   $('trMsg').textContent='잘 썼어요!';
   const cb=traceState.onPass;
-  setTimeout(()=>{ const ov=$('traceOv'); if(ov) ov.remove(); traceState=null; cb(); }, 420);
+  setTimeout(()=>{
+    const ov=$('traceOv'); if(ov) ov.remove();
+    const inl=$('trInline'); if(inl) inl.remove();
+    traceState=null; cb();
+  }, 420);
 }
 /* 마왕 전투: 주어진 말을 어절 단위로 따라 쓴다.
    맞은 어절 수만큼 적을 때리고, 틀린 어절 수만큼 내가 맞는다. */
@@ -7417,9 +7468,11 @@ function demonRound(){
   battle.q={demon:1, text, words};
   const eq=$('eq'); eq.innerHTML=''; battle.slots=[];
   const d=document.createElement('div');
+  d.className='demonLine';
   d.textContent=text;
-  d.style.fontSize = words.length>=5 ? 'clamp(15px,4.2vw,22px)' : 'clamp(20px,5.6vw,30px)';
-  d.style.lineHeight='1.5';
+  d.style.fontSize='clamp(18px,5vw,26px)';
+  d.style.lineHeight='1.4';
+  d.style.color='#ffe9a8';
   eq.appendChild(d);
   setMsg('이 말을 따라 써라! 바르게 쓴 만큼 공격한다.','');
   try{ hideBlockHint(); }catch(e){}
@@ -7461,34 +7514,35 @@ function openDemonTrace(words, done){
 }
 /* 낱말 하나를 칸에 따라 쓰게 한다. 통과 못 해도 넘어간다(틀린 것으로 센다) */
 function openTraceWord(word, cb, progress){
-  let ov=$('traceOv'); if(ov) ov.remove();
-  ov=document.createElement('div'); ov.id='traceOv';
+  /* 마왕도 새 창 없이, 문제 자리(#eq)에 어절 칸을 놓는다 */
+  const eq=$('eq'); if(!eq){ cb(false); return; }
+  const keep=eq.querySelector('.demonLine');          // 문장 표시는 남겨 둔다
   let cells='';
   for(let i=0;i<word.length;i++)
     cells+='<div class="trCellWrap"><canvas class="trCell" width="192" height="192" data-i="'+i+'"></canvas></div>';
-  ov.innerHTML=
-    '<div class="trBox">'+
-      '<div class="trTitle">따라 써라 <span style="color:#9aa4b8;font-size:12px">('+progress+')</span></div>'+
-      '<div class="trCells">'+cells+'</div>'+
-      '<div class="trPens" id="trPens">'+
-        PEN_COLORS.map(p=>'<button class="trPen'+(p.key===PEN?' on':'')+'" data-k="'+p.key+
-          '" style="background:'+p.c+'" title="'+p.name+'"></button>').join('')+
-      '</div>'+
-      '<div class="trMsg" id="trMsg">회색 글자 위를 따라 쓰세요</div>'+
-      '<div class="trBtns">'+
-        '<button class="btn" id="trClear">지우개</button>'+
-        '<button class="btn" id="trOk" style="border-color:var(--gold);background:#4a3c17">다 썼어요</button>'+
-      '</div>'+
+  const box=document.createElement('div');
+  box.className='trInline'; box.id='trInline';
+  box.innerHTML=
+    '<div class="trCells">'+cells+'</div>'+
+    '<div class="trPens" id="trPens">'+
+      PEN_COLORS.map(p=>'<button class="trPen'+(p.key===PEN?' on':'')+'" data-k="'+p.key+
+        '" style="background:'+p.c+'" title="'+p.name+'"></button>').join('')+
+    '</div>'+
+    '<div class="trMsg" id="trMsg"></div>'+
+    '<div class="trBtns">'+
+      '<button class="btn" id="trClear">지우개</button>'+
+      '<button class="btn" id="trOk" style="border-color:var(--gold);background:#4a3c17">다 썼어요</button>'+
     '</div>';
-  document.body.appendChild(ov);
+  const prev=$('trInline'); if(prev) prev.remove();
+  eq.appendChild(box);
   const cellObjs=[];
-  [].forEach.call(ov.querySelectorAll('.trCell'), (cv,i)=>cellObjs.push(setupTraceCell(cv, word[i])));
-  [].forEach.call(ov.querySelectorAll('.trPen'), b=>{
+  [].forEach.call(box.querySelectorAll('.trCell'), (cv,i)=>cellObjs.push(setupTraceCell(cv, word[i])));
+  [].forEach.call(box.querySelectorAll('.trPen'), b=>{
     b.onclick=()=>{ setPen(b.dataset.k); try{ beep(700,.04); }catch(e){} };
   });
+  let busy=false;
   $('trClear').onclick=()=>{ if(busy) return; cellObjs.forEach(c=>c.clear());
     $('trMsg').textContent='다시 따라 써 보자'; };
-  let busy=false;
   $('trOk').onclick=()=>{
     if(busy) return;                    // 연타 방지 (한 번만 채점)
     busy=true;
@@ -7501,9 +7555,10 @@ function openTraceWord(word, cb, progress){
     const passed = bad===0;
     try{ passed? (beep(1046,.07), setTimeout(()=>beep(1318,.09),80)) : beep(200,.12); }catch(e){}
     $('trMsg').textContent = passed? '잘 썼다!' : '아쉽다! (틀린 것으로 센다)';
-    setTimeout(()=>{ const o=$('traceOv'); if(o) o.remove(); cb(passed); }, 480);
+    setTimeout(()=>{ const o=$('trInline'); if(o) o.remove(); cb(passed); }, 480);
   };
 }
+
 function correct(){
   setLock(true);          // 이 문항은 채점 완료 → 추가 확인 불가
   stopQTimer();
@@ -7670,6 +7725,7 @@ function winBattle(){
   }
   S.wins++;
   battle.on=false; clearSel(); elB.classList.remove('show');
+  try{ document.body.classList.remove('demonMode'); }catch(e){}
   if(wasBoss){         // 팡파르가 울리는 동안은 BGM을 잠시 멈춘다
     stopBGM();
     setTimeout(()=>{ if(!battle.on && S && scr) setBGM(scr.def.rg); }, 2400);
