@@ -6948,9 +6948,11 @@ function startBattle(foe,isBoss){
   /* 국어는 어느 난이도에서나 그림을 보고 고르는 방식이다.
      단, 마왕은 '쓰기'로만 싸운다. */
   const isMC = (!demonOn()) && (korSubjectOn() || !!(DIFF[S.diff]&&DIFF[S.diff].mc));
-  $('cardMode').style.display = isMC?'none':'';
-  $('mcMode').style.display   = isMC?'':'none';
-  if(!isMC) buildTray();
+  /* 마왕은 카드도 보기도 쓰지 않는다. 아래 입력 영역을 전부 감춘다. */
+  const dm = demonOn();
+  $('cardMode').style.display = (dm || isMC) ? 'none' : '';
+  $('mcMode').style.display   = (!dm && isMC) ? '' : 'none';
+  if(!dm && !isMC) buildTray();
   nextQuestion();
   drawBHearts();
   elB.classList.add('show');
